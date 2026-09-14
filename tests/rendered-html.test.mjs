@@ -30,6 +30,13 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(main, /createRoot/);
   assert.match(html, /\/src\/main\.tsx/);
   assert.match(app, /from "lucide-react"/);
+  assert.match(app, /MapPinned/);
+  assert.match(app, /report-sample-road\.jpg/);
+  assert.match(app, /const SAMPLE_REPORTS: ReportSummary\[\]/);
+  assert.match(app, /function ReportOverview/);
+  assert.match(app, /function ReportOverviewMap/);
+  assert.match(app, /回報狀況總覽/);
+  assert.match(app, /總覽/);
   assert.match(app, /Upload/);
   assert.match(app, /await import\("leaflet"\)/);
   assert.match(app, /\/api\/map\/tiles\/light_all\/\{z\}\/\{x\}\/\{y\}\.png/);
@@ -57,6 +64,8 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(packageJson, /"lucide-react"/);
   assert.match(css, /@import "leaflet\/dist\/leaflet\.css"/);
   assert.match(css, /\.leaflet-report-marker/);
+  assert.match(css, /\.leaflet-overview-marker/);
+  assert.match(css, /\.overview-report-panel/);
   assert.match(css, /height:\s*var\(--app-height,\s*100dvh\)/);
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
@@ -84,6 +93,7 @@ test("uses native Cloudflare Pages structure", async () => {
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
+  await access(new URL("../src/assets/report-sample-road.jpg", import.meta.url));
 });
 
 test("prepares Cloudflare Pages static output", async () => {

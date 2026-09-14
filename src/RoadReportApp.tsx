@@ -4,12 +4,14 @@ import {
   Camera,
   Check,
   LocateFixed,
+  MapPinned,
   RefreshCw,
   Send,
   Upload,
 } from "lucide-react";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import { useEffect, useRef, useState } from "react";
+import sampleRoadPhoto from "./assets/report-sample-road.jpg";
 
 type RepairItem = {
   value: string;
@@ -35,6 +37,17 @@ type CaptchaState = {
 };
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
+type AppView = "report" | "overview";
+
+type ReportSummary = {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  photoUrl: string;
+  coordinates: Coordinates;
+  reportedAt: string;
+};
 
 const DEFAULT_COORDS: Coordinates = {
   lat: 25.01734,
@@ -60,9 +73,40 @@ const STEPS = [
   { title: "驗證", hint: "送出前輸入驗證碼" },
 ] as const;
 
+const SAMPLE_REPORTS: ReportSummary[] = [
+  {
+    id: "rr-001",
+    title: "辛亥路側門路面破損",
+    description: "柏油破裂且有凹陷，腳踏車經過時容易晃動。",
+    status: "待處理",
+    photoUrl: sampleRoadPhoto,
+    coordinates: { lat: 25.01734, lng: 121.53975, source: "map" },
+    reportedAt: "2026/09/14 09:20",
+  },
+  {
+    id: "rr-002",
+    title: "椰林大道旁人孔蓋鬆動",
+    description: "車輛壓過時會有明顯聲響，邊緣高度不平。",
+    status: "已轉派",
+    photoUrl: sampleRoadPhoto,
+    coordinates: { lat: 25.01662, lng: 121.53672, source: "map" },
+    reportedAt: "2026/09/13 17:42",
+  },
+  {
+    id: "rr-003",
+    title: "綜合教學館前積水",
+    description: "雨後低窪處積水，行人需繞行到車道邊。",
+    status: "追蹤中",
+    photoUrl: sampleRoadPhoto,
+    coordinates: { lat: 25.01818, lng: 121.54118, source: "map" },
+    reportedAt: "2026/09/07 12:08",
+  },
+];
+
 export function RoadReportApp() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const [appView, setAppView] = useState<AppView>("report");
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState<Coordinates>(DEFAULT_COORDS);
   const [items, setItems] = useState<RepairItem[]>(FALLBACK_ITEMS);
@@ -173,6 +217,7 @@ export function RoadReportApp() {
   const coordinateLabel = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
   const activeStep = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
+  const headerHint = appView === "overview" ? "查看校園回報分布" : activeStep.hint;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -184,7 +229,7 @@ export function RoadReportApp() {
 
   function handleLocate() {
     if (!navigator.geolocation) {
-      setGeoMessage("這台裝置不支援定位，請直接點選地圖或手動輸入地點。");
+      setGeoMessage("這台裝置不支援定位，請直接點選地圖標記位置。");
       return;
     }
 
@@ -397,18 +442,39 @@ export function RoadReportApp() {
 
   return (
     <main className="mobile-app-shell">
-      <form className="report-app" noValidate onSubmit={handleSubmit}>
+      <form
+        className={`report-app ${appView === "overview" ? "overview-app" : ""}`}
+        noValidate
+        onSubmit={handleSubmit}
+      >
         <header className="app-header">
-          <div>
+          <div className="brand-block">
             <h1>道路狀況回報</h1>
-            <p>{activeStep.hint}</p>
+            <p>{headerHint}</p>
           </div>
-          <div className="progress-pill" aria-label={`已完成 ${completionCount} 個必要步驟`}>
-            {completionCount}/5
+          <div className="header-actions">
+            <button
+              aria-pressed={appView === "overview"}
+              className="header-view-button"
+              onClick={() => setAppView((current) => (current === "overview" ? "report" : "overview"))}
+              type="button"
+            >
+              <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
+              {appView === "overview" ? "回報" : "總覽"}
+            </button>
+            {appView === "report" ? (
+              <div className="progress-pill" aria-label={`已完成 ${completionCount} 個必要步驟`}>
+                {completionCount}/5
+              </div>
+            ) : null}
           </div>
         </header>
 
-        <nav className="step-tabs" aria-label="回報步驟">
+        {appView === "overview" ? (
+          <ReportOverview reports={SAMPLE_REPORTS} />
+        ) : (
+          <>
+            <nav className="step-tabs" aria-label="回報步驟">
           {STEPS.map((step, index) => (
             <button
               aria-current={currentStep === index ? "step" : undefined}
@@ -425,9 +491,9 @@ export function RoadReportApp() {
               {step.title}
             </button>
           ))}
-        </nav>
+            </nav>
 
-        <section className="step-viewport" aria-live="polite">
+            <section className="step-viewport" aria-live="polite">
           <div className="step-screen" key={activeStep.title}>
             <div className="step-heading">
               <span>步驟 {currentStep + 1}</span>
@@ -665,9 +731,9 @@ export function RoadReportApp() {
               </section>
             ) : null}
           </div>
-        </section>
+            </section>
 
-        <div className="bottom-dock">
+            <div className="bottom-dock">
           {submitMessage ? (
             <p
               className={`dock-message ${
@@ -707,10 +773,181 @@ export function RoadReportApp() {
               </button>
             )}
           </div>
-        </div>
+            </div>
+          </>
+        )}
       </form>
     </main>
   );
+}
+
+function ReportOverview({ reports }: { reports: ReportSummary[] }) {
+  const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
+  const selectedReport = reports.find((report) => report.id === selectedId) ?? reports[0];
+
+  if (!selectedReport) {
+    return null;
+  }
+
+  return (
+    <section className="overview-page" aria-label="回報狀況總覽">
+      <div className="overview-summary" aria-label="POC 回報摘要">
+        <div>
+          <span>總件數</span>
+          <strong>{reports.length}</strong>
+        </div>
+        <div>
+          <span>待處理</span>
+          <strong>{reports.filter((report) => report.status === "待處理").length}</strong>
+        </div>
+        <div>
+          <span>資料來源</span>
+          <strong>POC</strong>
+        </div>
+      </div>
+
+      <div className="overview-map-shell">
+        <ReportOverviewMap
+          reports={reports}
+          selectedId={selectedReport.id}
+          onSelect={setSelectedId}
+        />
+        <article className="overview-report-panel" aria-live="polite">
+          <img alt={`${selectedReport.title}照片`} src={selectedReport.photoUrl} />
+          <div>
+            <div className="overview-report-meta">
+              <span>{selectedReport.status}</span>
+              <span>{selectedReport.reportedAt}</span>
+            </div>
+            <h2>{selectedReport.title}</h2>
+            <p>{selectedReport.description}</p>
+            <strong>{formatCoordinateValue(selectedReport.coordinates)}</strong>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function ReportOverviewMap({
+  reports,
+  selectedId,
+  onSelect,
+}: {
+  reports: ReportSummary[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRefs = useRef(new Map<string, LeafletMarker>());
+  const onSelectRef = useRef(onSelect);
+  const selectedIdRef = useRef(selectedId);
+
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  useEffect(() => {
+    let disposed = false;
+
+    async function setupMap() {
+      const L = await import("leaflet");
+
+      if (disposed || !containerRef.current || mapRef.current) {
+        return;
+      }
+
+      const map = L.map(containerRef.current, {
+        attributionControl: false,
+        zoomControl: false,
+        scrollWheelZoom: true,
+      }).setView([DEFAULT_COORDS.lat, DEFAULT_COORDS.lng], 17);
+
+      L.tileLayer(
+        "/api/map/tiles/light_all/{z}/{x}/{y}.png",
+        {
+          maxZoom: 20,
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+        },
+      ).addTo(map);
+
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+      L.control
+        .attribution({ position: "bottomleft", prefix: false })
+        .addTo(map);
+
+      for (const report of reports) {
+        const marker = L.marker([report.coordinates.lat, report.coordinates.lng], {
+          icon: overviewMarkerIcon(L, report.id === selectedIdRef.current),
+          keyboard: false,
+          title: report.title,
+        }).addTo(map);
+        marker.on("click", () => onSelectRef.current(report.id));
+        markerRefs.current.set(report.id, marker);
+      }
+
+      if (reports.length > 1) {
+        const bounds = L.latLngBounds(
+          reports.map((report) => [report.coordinates.lat, report.coordinates.lng] as [number, number]),
+        );
+        map.fitBounds(bounds, { padding: [44, 44], maxZoom: 17 });
+      }
+
+      mapRef.current = map;
+      window.requestAnimationFrame(() => map.invalidateSize());
+    }
+
+    setupMap();
+
+    return () => {
+      disposed = true;
+      markerRefs.current.clear();
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, [reports]);
+
+  useEffect(() => {
+    async function updateSelectedMarker() {
+      const L = await import("leaflet");
+
+      for (const [id, marker] of markerRefs.current) {
+        marker.setIcon(overviewMarkerIcon(L, id === selectedId));
+      }
+
+      const selected = reports.find((report) => report.id === selectedId);
+      if (selected) {
+        mapRef.current?.panTo([selected.coordinates.lat, selected.coordinates.lng], {
+          animate: true,
+          duration: 0.25,
+        });
+      }
+    }
+
+    updateSelectedMarker();
+  }, [reports, selectedId]);
+
+  return (
+    <div
+      aria-label="回報地點地圖"
+      className="overview-map-canvas"
+      ref={containerRef}
+      role="application"
+    />
+  );
+}
+
+function overviewMarkerIcon(L: typeof import("leaflet"), active: boolean) {
+  return L.divIcon({
+    className: active ? "leaflet-overview-marker is-active" : "leaflet-overview-marker",
+    iconAnchor: [15, 15],
+    iconSize: [30, 30],
+  });
 }
 
 function LowInterferenceMap({

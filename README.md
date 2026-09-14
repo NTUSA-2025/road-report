@@ -11,6 +11,7 @@
 ## 功能
 
 - 地圖預設在臺大校園，支援手機定位與點選地圖更新座標
+- 回報狀況總覽為純前端 POC，以地圖呈現假資料地點、照片與描述
 - 手機拍照按鈕位於照片區中下方，使用 `capture="environment"`
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
