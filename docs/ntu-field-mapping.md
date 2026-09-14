@@ -23,7 +23,7 @@
 | `Location` | 位置步驟經緯度 | 否 | 前端仍可送此欄位相容舊流程，但本站後端不信任此值；實際送往 NTU 的 `Location` 一律由 `Latitude`、`Longitude` 產生。 |
 | `BrokenItemId` | 現況步驟報修類型 | 是 | 選項來自 NTU 表單 `BrokenItemId`；連線失敗時使用本站 fallback 選項。 |
 | `Reason` | 現況步驟問題描述 | 是 | 回報原因與道路狀況描述。 |
-| `ImageDescription` | 位置步驟位置補充欄位 | 否 | 補充附近地標、路口、照片角度等位置相關資訊。 |
+| `ImageDescription` | 現況步驟照片補充說明 | 否 | 補充照片角度、附近地標等資訊。 |
 | `CapAns` | 驗證步驟 captcha 答案 | 是 | 使用者手動輸入的 NTU captcha。 |
 | `ImageTakenYear` | 現況步驟拍攝日期欄位 | 否 | 由前端 `type="date"` 欄位拆成年份；預設使用照片 EXIF 日期、檔案時間或送出當下日期。 |
 | `ImageTakenMonth` | 現況步驟拍攝日期欄位 | 否 | 由前端 `type="date"` 欄位拆成月份，1 到 12。 |
@@ -49,7 +49,7 @@
 | `ImageTakenYear` | 前端 `ImageTakenYear` | 來自現況步驟的純日期欄位；若使用者未更改，預設為照片 EXIF 日期、檔案時間或目前日期。 |
 | `ImageTakenMonth` | 前端 `ImageTakenMonth` | 來自現況步驟的純日期欄位；若使用者未更改，預設為照片 EXIF 日期、檔案時間或目前日期。 |
 | `ImageTakenDay` | 前端 `ImageTakenDay` | 來自現況步驟的純日期欄位；若使用者未更改，預設為照片 EXIF 日期、檔案時間或目前日期。 |
-| `ImageDescription` | 前端 `ImageDescription` | 由位置步驟的「位置補充」欄位送出，`textValue()` trim 後送出，可空白。 |
+| `ImageDescription` | 前端 `ImageDescription` | `textValue()` trim 後送出，可空白。 |
 | `CapId` | `rr_ntu_repair.capId` | 從 NTU `PublicRepair/Create` 頁面 hidden input 取得；刷新 captcha 時更新。 |
 | `CapAns` | 前端 `CapAns` | 使用者輸入的 captcha 答案；本站送出前檢查必填。 |
 
