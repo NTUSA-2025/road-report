@@ -38,14 +38,39 @@ export async function onRequestGet({
   const tileUrl = new URL(`/${style}/${z}/${x}/${y}.png`, `https://${subdomain}.basemaps.cartocdn.com`);
   tileUrl.searchParams.set("api_key", env.CARTO_API_KEY);
 
-  const upstream = await fetch(tileUrl, {
-    headers: {
-      accept: "image/avif,image/webp,image/png,image/*,*/*;q=0.8",
-    },
-  });
+  let upstream: Response;
+
+  try {
+    upstream = await fetch(tileUrl, {
+      headers: {
+        accept: "image/avif,image/webp,image/png,image/*,*/*;q=0.8",
+      },
+    });
+  } catch (error) {
+    return jsonResponse(
+      {
+        error: "Unable to reach CARTO tile service.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      {
+        status: 502,
+        headers: diagnosticHeaders({
+          style,
+          status: "fetch-error",
+          upstreamHost: tileUrl.host,
+        }),
+      },
+    );
+  }
+
   const headers = new Headers(upstream.headers);
 
   headers.set("cache-control", upstream.ok ? "public, max-age=86400, stale-while-revalidate=604800" : "no-store");
+  setDiagnosticHeaders(headers, {
+    style,
+    status: String(upstream.status),
+    upstreamHost: tileUrl.host,
+  });
   headers.delete("set-cookie");
 
   return new Response(upstream.body, {
@@ -53,4 +78,42 @@ export async function onRequestGet({
     statusText: upstream.statusText,
     headers,
   });
+}
+
+function diagnosticHeaders({
+  status,
+  style,
+  upstreamHost,
+}: {
+  status: string;
+  style: string;
+  upstreamHost: string;
+}) {
+  const headers = new Headers();
+
+  setDiagnosticHeaders(headers, {
+    status,
+    style,
+    upstreamHost,
+  });
+
+  return headers;
+}
+
+function setDiagnosticHeaders(
+  headers: Headers,
+  {
+    status,
+    style,
+    upstreamHost,
+  }: {
+    status: string;
+    style: string;
+    upstreamHost: string;
+  },
+) {
+  headers.set("x-road-report-config", "carto-api-key-present");
+  headers.set("x-road-report-upstream-host", upstreamHost);
+  headers.set("x-road-report-upstream-status", status);
+  headers.set("x-road-report-upstream-style", style);
 }

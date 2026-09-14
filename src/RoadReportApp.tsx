@@ -9,7 +9,7 @@ import {
   Send,
   Upload,
 } from "lucide-react";
-import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
+import type { Map as LeafletMap, Marker as LeafletMarker, TileLayer as LeafletTileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "react";
 import sampleRoadPhoto from "./assets/report-sample-road.jpg";
 
@@ -54,6 +54,16 @@ const DEFAULT_COORDS: Coordinates = {
   lng: 121.53975,
   source: "default",
 };
+
+const MAP_TILE_URL_TEMPLATE = "/api/map/tiles/light_all/{z}/{x}/{y}.png";
+const MAP_TILE_DIAGNOSTIC_HEADERS = [
+  "content-type",
+  "x-road-report-config",
+  "x-road-report-upstream-host",
+  "x-road-report-upstream-status",
+  "x-road-report-upstream-style",
+];
+const reportedMapTileDiagnostics = new Set<string>();
 
 const FALLBACK_ITEMS: RepairItem[] = [
   { value: "1", label: "路燈 street light" },
@@ -867,13 +877,7 @@ function ReportOverviewMap({
         scrollWheelZoom: true,
       }).setView([DEFAULT_COORDS.lat, DEFAULT_COORDS.lng], 17);
 
-      L.tileLayer(
-        "/api/map/tiles/light_all/{z}/{x}/{y}.png",
-        {
-          maxZoom: 20,
-          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-        },
-      ).addTo(map);
+      createMapTileLayer(L, "overview").addTo(map);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.control
@@ -949,6 +953,217 @@ function overviewMarkerIcon(L: typeof import("leaflet"), active: boolean) {
   });
 }
 
+type LeafletModule = typeof import("leaflet");
+type MapTileDiagnosticContext = "overview" | "report-form";
+
+type MapTileErrorEvent = {
+  coords?: {
+    x?: number;
+    y?: number;
+    z?: number;
+  };
+  error?: unknown;
+  target?: {
+    getTileUrl?: (coords: { x?: number; y?: number; z?: number }) => string;
+  };
+  tile?: HTMLImageElement;
+};
+
+function createMapTileLayer(L: LeafletModule, context: MapTileDiagnosticContext) {
+  const tileLayer = L.tileLayer(MAP_TILE_URL_TEMPLATE, {
+    maxZoom: 20,
+    attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+  });
+
+  attachMapTileDiagnostics(tileLayer, context);
+
+  return tileLayer;
+}
+
+function attachMapTileDiagnostics(tileLayer: LeafletTileLayer, context: MapTileDiagnosticContext) {
+  console.info("[RoadReport map] Initializing tile proxy", {
+    context,
+    template: MAP_TILE_URL_TEMPLATE,
+  });
+
+  tileLayer.on("tileload", (event: unknown) => {
+    const tileEvent = event as MapTileErrorEvent;
+    const loadedKey = `${context}:loaded`;
+
+    if (reportedMapTileDiagnostics.has(loadedKey)) {
+      return;
+    }
+
+    reportedMapTileDiagnostics.add(loadedKey);
+    console.info("[RoadReport map] First tile loaded", {
+      context,
+      coords: tileEvent.coords ?? null,
+      tileUrl: tileEvent.tile?.currentSrc || tileEvent.tile?.src || null,
+    });
+  });
+
+  tileLayer.on("tileerror", (event: unknown) => {
+    const tileEvent = event as MapTileErrorEvent;
+    const diagnosticUrl = mapTileUrlFromEvent(tileEvent);
+    const failedKey = `${context}:failed`;
+
+    if (reportedMapTileDiagnostics.has(failedKey)) {
+      return;
+    }
+
+    reportedMapTileDiagnostics.add(failedKey);
+
+    if (!diagnosticUrl) {
+      console.error("[RoadReport map] Tile load failed before a diagnostic URL was available", {
+        context,
+        coords: tileEvent.coords ?? null,
+        eventError: describeMapTileError(tileEvent.error),
+      });
+      return;
+    }
+
+    void logMapTileDiagnostics({
+      context,
+      coords: tileEvent.coords ?? null,
+      eventError: describeMapTileError(tileEvent.error),
+      tileUrl: diagnosticUrl,
+    });
+  });
+}
+
+function mapTileUrlFromEvent(event: MapTileErrorEvent) {
+  const tileUrl = event.tile?.currentSrc || event.tile?.src;
+
+  if (tileUrl) {
+    return tileUrl;
+  }
+
+  if (event.coords && event.target?.getTileUrl) {
+    return event.target.getTileUrl(event.coords);
+  }
+
+  return null;
+}
+
+async function logMapTileDiagnostics({
+  context,
+  coords,
+  eventError,
+  tileUrl,
+}: {
+  context: MapTileDiagnosticContext;
+  coords: MapTileErrorEvent["coords"] | null;
+  eventError: unknown;
+  tileUrl: string;
+}) {
+  const startedAt = performance.now();
+
+  try {
+    const diagnosticUrl = new URL(tileUrl, window.location.href);
+    diagnosticUrl.searchParams.set("roadReportMapDiagnostic", String(Date.now()));
+
+    const response = await fetch(diagnosticUrl, {
+      cache: "no-store",
+      headers: {
+        accept: "application/json,text/plain,image/*,*/*;q=0.8",
+      },
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    const responseBodyPreview = await readMapDiagnosticBodyPreview(response, contentType);
+    const diagnosticHeaders = Object.fromEntries(
+      MAP_TILE_DIAGNOSTIC_HEADERS.map((header) => [header, response.headers.get(header)]),
+    );
+    const diagnosis = diagnoseMapTileResponse(response.status, diagnosticHeaders, responseBodyPreview);
+
+    console.groupCollapsed(`[RoadReport map] Tile diagnostic: ${diagnosis}`);
+    console.table({
+      context,
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      contentType: contentType || "(none)",
+      elapsedMs: Math.round(performance.now() - startedAt),
+    });
+    console.log("Tile request", {
+      coords,
+      tileUrl,
+      diagnosticUrl: diagnosticUrl.toString(),
+      eventError,
+    });
+    console.log("Proxy diagnostics", diagnosticHeaders);
+
+    if (responseBodyPreview) {
+      console.log("Response body preview", responseBodyPreview);
+    }
+
+    console.groupEnd();
+  } catch (error) {
+    console.error("[RoadReport map] Tile diagnostic request failed", {
+      context,
+      coords,
+      tileUrl,
+      eventError,
+      diagnosticError: describeMapTileError(error),
+    });
+  }
+}
+
+async function readMapDiagnosticBodyPreview(response: Response, contentType: string) {
+  if (response.ok && !contentType.includes("json") && !contentType.startsWith("text/")) {
+    return null;
+  }
+
+  const body = await response.clone().text();
+
+  if (!body) {
+    return null;
+  }
+
+  return body.length > 800 ? `${body.slice(0, 800)}...` : body;
+}
+
+function diagnoseMapTileResponse(
+  status: number,
+  headers: Record<string, string | null>,
+  responseBodyPreview: string | null,
+) {
+  const config = headers["x-road-report-config"];
+  const body = responseBodyPreview?.toLowerCase() ?? "";
+
+  if (config === "missing-carto-api-key") {
+    return "CARTO_API_KEY was not read by the Pages Function";
+  }
+
+  if (status === 401 || status === 403 || body.includes("api key") || body.includes("apikey")) {
+    return "CARTO rejected the tile request; check whether the API key is valid and allowed";
+  }
+
+  if (status === 404) {
+    return "the tile route or tile coordinates were not accepted";
+  }
+
+  if (status >= 500) {
+    return "the tile proxy or CARTO upstream returned a server error";
+  }
+
+  if (status >= 400) {
+    return "the tile proxy or CARTO upstream returned a client error";
+  }
+
+  return "diagnostic fetch succeeded; inspect the original tile event and browser network panel";
+}
+
+function describeMapTileError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return error ?? null;
+}
+
 function LowInterferenceMap({
   coords,
   onChange,
@@ -983,13 +1198,7 @@ function LowInterferenceMap({
         scrollWheelZoom: false,
       }).setView([initialCoords.lat, initialCoords.lng], 18);
 
-      L.tileLayer(
-        "/api/map/tiles/light_all/{z}/{x}/{y}.png",
-        {
-          maxZoom: 20,
-          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-        },
-      ).addTo(map);
+      createMapTileLayer(L, "report-form").addTo(map);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.control
