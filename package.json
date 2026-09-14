@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:pages": "npm run build && wrangler pages dev dist --env-file=.env",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
