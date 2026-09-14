@@ -729,13 +729,13 @@ export function RoadReportApp() {
           ) : null}
           <div className="dock-actions">
             <button
-              aria-label="上一步"
               className="back-button"
               disabled={currentStep === 0 || submitState === "submitting"}
               onClick={goBack}
               type="button"
             >
               <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.5} />
+              上一步
             </button>
             {isLastStep ? (
               <button

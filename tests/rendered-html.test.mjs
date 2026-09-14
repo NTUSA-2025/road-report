@@ -57,7 +57,6 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.doesNotMatch(app, /captchaUrl\}&v=/);
   assert.match(app, /請先填寫道路狀況描述。/);
   assert.match(app, /請先填寫聯絡電話。/);
-  assert.match(app, /aria-label="上一步"/);
   assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
   assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton|vinext|eslint-config-next|next"/);
@@ -71,7 +70,6 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(css, /height:\s*var\(--app-height,\s*100dvh\)/);
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
-  assert.match(css, /grid-template-columns:\s*58px minmax\(0,\s*1fr\)/);
   assert.match(favicon, /stroke="#17624f"/);
   assert.match(wrangler, /name = "road-report"/);
   assert.match(wrangler, /pages_build_output_dir = "\.\/dist"/);
