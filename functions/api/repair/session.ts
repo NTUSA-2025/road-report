@@ -1,4 +1,5 @@
 import { jsonResponse, methodNotAllowed } from "../../_lib/http";
+import { isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
 import {
   appendRepairSessionCookie,
   captchaUrl,
@@ -7,7 +8,7 @@ import {
 } from "../../_lib/ntu";
 import type { PagesContext } from "../../_lib/types";
 
-export async function onRequestPost({ request }: PagesContext) {
+export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv>) {
   try {
     const { session, items } = await fetchCreateSession();
     const captchaImageUrl = await fetchCaptchaImageDataUrl(session);
@@ -19,6 +20,7 @@ export async function onRequestPost({ request }: PagesContext) {
         captchaUrl: captchaImageUrl,
         captchaProxyUrl: captchaUrl(),
         items,
+        submitEnabled: isRepairSubmitEnabled(env),
       },
       { headers },
     );

@@ -12,7 +12,7 @@ test("builds the road report app shell", async () => {
 });
 
 test("uses native Cloudflare Pages structure", async () => {
-  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, session, refresh, submit, tile] = await Promise.all([
+  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, flags, session, refresh, submit, tile] = await Promise.all([
     readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
@@ -23,6 +23,7 @@ test("uses native Cloudflare Pages structure", async () => {
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../functions/_lib/ntu.ts", import.meta.url), "utf8"),
+    readFile(new URL("../functions/_lib/feature-flags.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/repair/session.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/repair/captcha/refresh.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/repair/submit.ts", import.meta.url), "utf8"),
@@ -55,6 +56,9 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);
   assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
   assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
+  assert.match(app, /setSubmitEnabled\(payload\.submitEnabled === true\)/);
+  assert.match(app, /報修送出目前暫停開放，驗證碼仍會正常載入。/);
+  assert.match(app, /disabled=\{submitState === "submitting" \|\| captcha\.loading \|\| !submitEnabled\}/);
   assert.match(app, /url\.startsWith\("data:"\)/);
   assert.match(app, /const separator = url\.includes\("\?"\) \? "&" : "\?"/);
   assert.doesNotMatch(app, /captchaUrl\}&v=/);
@@ -81,16 +85,20 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(wrangler, /compatibility_date = "2026-09-14"/);
   assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
   assert.match(wrangler, /\[secrets\]/);
-  assert.match(wrangler, /required = \["CARTO_API_KEY"\]/);
+  assert.match(wrangler, /required = \["CARTO_API_KEY", "REPAIR_SUBMIT_ENABLED"\]/);
   assert.match(viteConfig, /@vitejs\/plugin-react/);
   assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
   assert.match(ntu, /fetchCreateSession/);
   assert.match(ntu, /fetchCaptchaImageDataUrl/);
   assert.match(ntu, /data:\$\{contentType\};base64/);
+  assert.match(flags, /REPAIR_SUBMIT_ENABLED\?: string/);
+  assert.match(flags, /\["1", "true", "yes", "on"\]/);
   assert.match(session, /captchaUrl: captchaImageUrl/);
   assert.match(session, /captchaProxyUrl: captchaUrl\(\)/);
+  assert.match(session, /submitEnabled: isRepairSubmitEnabled\(env\)/);
   assert.match(refresh, /captchaUrl: captchaImageUrl/);
   assert.match(refresh, /captchaProxyUrl: captchaUrl\(\)/);
+  assert.match(submit, /if \(!isRepairSubmitEnabled\(env\)\)/);
   assert.match(submit, /"Latitude"/);
   assert.match(submit, /"Longitude"/);
   assert.match(submit, /upstream\.set\("Location", coordinatesValue\(incoming\)/);
@@ -98,7 +106,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(tile, /CARTO_API_KEY\?: string/);
   assert.match(tile, /api_key/);
   assert.match(tile, /x-road-report-config/);
-  assert.equal(envExample.trim(), "CARTO_API_KEY=");
+  assert.equal(envExample.trim(), "CARTO_API_KEY=\nREPAIR_SUBMIT_ENABLED=false");
   await assert.rejects(access(new URL("../app/page.tsx", import.meta.url)));
   await assert.rejects(access(new URL("../worker/index.ts", import.meta.url)));
   await assert.rejects(access(new URL("../scripts/prepare-pages-output.mjs", import.meta.url)));

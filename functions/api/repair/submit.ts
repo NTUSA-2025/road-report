@@ -1,4 +1,5 @@
 import { jsonResponse, methodNotAllowed } from "../../_lib/http";
+import { isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
 import {
   appendRepairSessionCookie,
   createPath,
@@ -17,7 +18,14 @@ const REQUIRED_FIELDS = [
   "CapAns",
 ];
 
-export async function onRequestPost({ request }: PagesContext) {
+export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv>) {
+  if (!isRepairSubmitEnabled(env)) {
+    return jsonResponse(
+      { error: "報修送出目前暫停開放，驗證碼與表單仍可先準備。" },
+      { status: 403 },
+    );
+  }
+
   const session = readRepairSession(request);
 
   if (!session) {

@@ -129,6 +129,7 @@ export function RoadReportApp() {
     imageUrl: "",
     error: "",
   });
+  const [submitEnabled, setSubmitEnabled] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
   const [geoMessage, setGeoMessage] = useState("地圖預設在臺大校園，可用定位或點選地圖修正。");
@@ -170,6 +171,7 @@ export function RoadReportApp() {
             imageUrl: cacheBustUrl(payload.captchaUrl),
             error: "",
           });
+          setSubmitEnabled(payload.submitEnabled === true);
           if (Array.isArray(payload.items) && payload.items.length > 0) {
             setItems(payload.items);
           }
@@ -320,6 +322,12 @@ export function RoadReportApp() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!submitEnabled) {
+      setSubmitState("error");
+      setSubmitMessage("報修送出目前暫停開放，驗證碼與表單仍可先準備。");
+      return;
+    }
 
     const missing = firstMissingStep();
     if (missing != null) {
@@ -712,6 +720,9 @@ export function RoadReportApp() {
                 </div>
 
                 {captcha.error ? <p className="error-text">{captcha.error}</p> : null}
+                {!submitEnabled && captcha.ready ? (
+                  <p className="error-text">報修送出目前暫停開放，驗證碼仍會正常載入。</p>
+                ) : null}
               </section>
             ) : null}
           </div>
@@ -740,11 +751,15 @@ export function RoadReportApp() {
             {isLastStep ? (
               <button
                 className="submit-button"
-                disabled={submitState === "submitting" || captcha.loading}
+                disabled={submitState === "submitting" || captcha.loading || !submitEnabled}
                 type="submit"
               >
                 <Send aria-hidden="true" size={18} strokeWidth={2.5} />
-                {submitState === "submitting" ? "送出中..." : "送出報修"}
+                {submitState === "submitting"
+                  ? "送出中..."
+                  : submitEnabled
+                    ? "送出報修"
+                    : "暫停送出"}
               </button>
             ) : (
               <button
