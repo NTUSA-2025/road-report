@@ -1,0 +1,26 @@
+name = "ntu-road-report"
+compatibility_date = "2026-09-14"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist/client"
+send_metrics = false
+
+# Cloudflare Pages build settings:
+# Build command: npm run build
+# Build output directory: dist/client
+#
+# Future binding examples. Keep these commented until real Cloudflare resource
+# IDs/names exist; otherwise Wrangler will treat them as active bindings.
+#
+# [[kv_namespaces]]
+# binding = "ROAD_REPORT_KV"
+# id = "<kv_namespace_id>"
+# preview_id = "<preview_kv_namespace_id>"
+#
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "road-report"
+# database_id = "<d1_database_id>"
+#
+# [[r2_buckets]]
+# binding = "ROAD_REPORT_BUCKET"
+# bucket_name = "road-report-uploads"

@@ -18,4 +18,16 @@ npm install
 npm run build
 ```
 
+## Cloudflare Pages
+
+Cloudflare Pages 設定：
+
+- Build command: `npm run build`
+- Build output directory: `dist/client`
+- Wrangler config: `wrangler.toml`
+
+`npm run build` 會先執行 vinext build，再由 `scripts/prepare-pages-output.mjs` 將 server bundle 整理成 Pages advanced mode 使用的 `dist/client/_worker.js`。不要手動修改 `dist/` 內的檔案。
+
+未來若要接 Cloudflare D1、KV 或 R2，先建立正式/preview 資源，再把 `wrangler.toml` 內的範例 binding 取消註解並填入實際 ID。
+
 本專案刻意不自動破解 captcha，只把 NTU 原表單的 captcha 接到本站顯示，仍由使用者辨識輸入。

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -39,13 +39,14 @@ test("server-renders the road report app shell", async () => {
 });
 
 test("keeps starter preview removed", async () => {
-  const [page, app, layout, packageJson, css, favicon] = await Promise.all([
+  const [page, app, layout, packageJson, css, favicon, wrangler] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
+    readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
@@ -64,7 +65,19 @@ test("keeps starter preview removed", async () => {
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
   assert.match(favicon, /stroke="#17624f"/);
+  assert.match(wrangler, /pages_build_output_dir = "\.\/dist\/client"/);
+  assert.match(wrangler, /compatibility_date = "2026-09-14"/);
+  assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
+});
+
+test("prepares Cloudflare Pages advanced mode output", async () => {
+  const assets = await readdir(new URL("../dist/client/assets/", import.meta.url));
+
+  await access(new URL("../dist/client/_worker.js", import.meta.url));
+  await access(new URL("../dist/client/ssr/index.js", import.meta.url));
+  assert.ok(assets.some((file) => file.startsWith("RoadReportApp-")));
+  assert.ok(assets.some((file) => file.startsWith("leaflet-src-")));
 });
