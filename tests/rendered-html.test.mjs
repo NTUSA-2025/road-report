@@ -30,10 +30,11 @@ test("server-renders the road report app shell", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>臺大道路狀況回報<\/title>/i);
-  assert.match(html, /NTU Road Report/);
   assert.match(html, /臺大道路狀況回報/);
-  assert.match(html, /拍照或選照片/);
+  assert.match(html, /道路狀況回報/);
+  assert.match(html, /送到臺大公設報修/);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/);
+  assert.doesNotMatch(html, /NTU Road Report/);
 });
 
 test("keeps starter preview removed", async () => {

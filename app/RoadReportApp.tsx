@@ -131,6 +131,16 @@ export function RoadReportApp() {
 
   const mapTiles = useMemo(() => buildTiles(coords.lat, coords.lng), [coords.lat, coords.lng]);
   const takenDate = photoMeta.takenAt ?? new Date();
+  const completionCount = [
+    photo,
+    description.trim(),
+    phone.trim(),
+    location.trim(),
+    captchaAnswer.trim().length === 5,
+  ].filter(Boolean).length;
+  const selectedItemLabel =
+    items.find((item) => item.value === itemId)?.label ?? "路面";
+  const coordinateLabel = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
 
   function updateCoords(next: Coordinates, updateLocation = true) {
     setCoords(next);
@@ -287,33 +297,125 @@ export function RoadReportApp() {
   }
 
   return (
-    <main className="app-shell">
-      <section className="report-hero" aria-label="道路狀況回報">
-        <div className="hero-copy">
-          <p className="eyebrow">NTU Road Report</p>
-          <h1>臺大道路狀況回報</h1>
-          <p>
-            用手機定位、地圖標記與照片資訊，整理成 NTU 公共設施報修表單需要的內容。
-          </p>
-        </div>
+    <main className="mobile-app-shell">
+      <form className="report-app" onSubmit={handleSubmit}>
+        <header className="app-header">
+          <div>
+            <h1>道路狀況回報</h1>
+            <p>送到臺大公設報修</p>
+          </div>
+          <div className="progress-pill" aria-label={`已完成 ${completionCount} 個必要步驟`}>
+            {completionCount}/5
+          </div>
+        </header>
 
-        <div className="status-strip" aria-label="目前回報狀態">
-          <span>{photo ? "已選照片" : "尚未拍照"}</span>
-          <span>{coords.source === "default" ? "預設校園位置" : "座標已更新"}</span>
-          <span>{captcha.ready ? "驗證碼已載入" : "等待驗證碼"}</span>
-        </div>
-      </section>
+        <section className="capture-stage" aria-label="拍照上傳">
+          <input
+            ref={fileInputRef}
+            accept="image/jpeg,image/png,image/bmp"
+            capture="environment"
+            className="file-input"
+            name="photo"
+            onChange={(event) => handlePhotoSelected(event.target.files?.[0] ?? null)}
+            type="file"
+          />
 
-      <form className="report-layout" onSubmit={handleSubmit}>
-        <section className="map-panel" aria-label="地圖定位">
-          <div className="panel-header">
+          <div className="photo-preview" aria-live="polite">
+            {photoUrl ? (
+              <img alt="準備送出的道路狀況照片" src={photoUrl} />
+            ) : (
+              <div className="empty-photo">
+                <strong>先拍一張現場照片</strong>
+                <span>會自動讀取拍攝日期，若照片包含 GPS 也會更新地圖位置。</span>
+              </div>
+            )}
+          </div>
+
+          <div className="stage-topbar">
+            <span>{photo ? "照片已就緒" : "需要照片"}</span>
+            <span>{formatDateForText(takenDate)}</span>
+          </div>
+
+          <button
+            className="camera-button"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {photo ? "重拍或換照片" : "拍照"}
+          </button>
+
+          <div className="photo-meta">
             <div>
-              <p className="section-kicker">位置</p>
-              <h2>標記道路狀況位置</h2>
+              <span>照片座標</span>
+              <strong>{photoMeta.coordinates ? "已帶入" : "尚未取得"}</strong>
             </div>
-            <button className="ghost-button" type="button" onClick={handleLocate}>
-              使用定位
+            <div>
+              <span>目前位置</span>
+              <strong>{coordinateLabel}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="app-card details-card" aria-label="報修現況">
+          <div className="card-title">
+            <span>1</span>
+            <div>
+              <h2>現況</h2>
+              <p>{selectedItemLabel}</p>
+            </div>
+          </div>
+
+          <label className="field-label">
+            申報項目
+            <select
+              onChange={(event) => setItemId(event.target.value)}
+              required
+              value={itemId}
+            >
+              {items.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field-label">
+            發生什麼狀況
+            <textarea
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="例：路面破損，腳踏車經過時容易摔倒。"
+              required
+              rows={4}
+              value={description}
+            />
+          </label>
+
+          <label className="field-label">
+            相片補充
+            <input
+              onChange={(event) => setMoreInfo(event.target.value)}
+              placeholder="可補充照片角度、附近地標"
+              type="text"
+              value={moreInfo}
+            />
+          </label>
+        </section>
+
+        <section className="app-card location-card" aria-label="位置">
+          <div className="card-title">
+            <span>2</span>
+            <div>
+              <h2>位置</h2>
+              <p>{geoMessage}</p>
+            </div>
+          </div>
+
+          <div className="location-actions">
+            <button className="soft-button" type="button" onClick={handleLocate}>
+              用手機定位
             </button>
+            <div className="coord-chip">{coordinateLabel}</div>
           </div>
 
           <button
@@ -332,80 +434,38 @@ export function RoadReportApp() {
                 />
               ))}
             </div>
-            <div className="map-crosshair" aria-hidden="true" />
             <div className="map-pin" aria-hidden="true">
               <span />
             </div>
           </button>
 
-          <div className="coordinate-row">
-            <div>
-              <span>緯度</span>
-              <strong>{coords.lat.toFixed(6)}</strong>
-            </div>
-            <div>
-              <span>經度</span>
-              <strong>{coords.lng.toFixed(6)}</strong>
-            </div>
-          </div>
-          <p className="hint">{geoMessage}</p>
+          <label className="field-label">
+            報修地點
+            <input
+              onChange={(event) => setLocation(event.target.value)}
+              required
+              type="text"
+              value={location}
+            />
+          </label>
         </section>
 
-        <section className="photo-panel" aria-label="拍照上傳">
-          <input
-            ref={fileInputRef}
-            accept="image/jpeg,image/png,image/bmp"
-            capture="environment"
-            className="file-input"
-            name="photo"
-            onChange={(event) => handlePhotoSelected(event.target.files?.[0] ?? null)}
-            type="file"
-          />
-
-          <div className="photo-preview">
-            {photoUrl ? (
-              <img alt="準備送出的道路狀況照片" src={photoUrl} />
-            ) : (
-              <div className="empty-photo">
-                <span>照片會顯示在這裡</span>
-              </div>
-            )}
-          </div>
-
-          <button
-            className="camera-button"
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            拍照或選照片
-          </button>
-
-          <div className="photo-meta">
+        <section className="app-card contact-card" aria-label="聯絡資料">
+          <div className="card-title">
+            <span>3</span>
             <div>
-              <span>拍攝日期</span>
-              <strong>{formatDateForText(takenDate)}</strong>
-            </div>
-            <div>
-              <span>照片座標</span>
-              <strong>{photoMeta.coordinates ? "已讀取" : "未包含"}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="form-panel" aria-label="報修資料">
-          <div className="panel-header">
-            <div>
-              <p className="section-kicker">表單</p>
-              <h2>送到 NTU 公設報修</h2>
+              <h2>聯絡資料</h2>
+              <p>電話為必填，姓名與信箱不公開。</p>
             </div>
           </div>
 
-          <label>
-            聯絡電話 *
+          <label className="field-label">
+            聯絡電話
             <input
               autoComplete="tel"
               maxLength={15}
               onChange={(event) => setPhone(event.target.value)}
+              placeholder="09xx-xxx-xxx"
               required
               type="tel"
               value={phone}
@@ -413,7 +473,7 @@ export function RoadReportApp() {
           </label>
 
           <div className="two-fields">
-            <label>
+            <label className="field-label">
               姓名
               <input
                 autoComplete="name"
@@ -422,7 +482,7 @@ export function RoadReportApp() {
                 value={name}
               />
             </label>
-            <label>
+            <label className="field-label">
               E-mail
               <input
                 autoComplete="email"
@@ -432,67 +492,29 @@ export function RoadReportApp() {
               />
             </label>
           </div>
+        </section>
 
-          <label>
-            報修地點 *
-            <input
-              onChange={(event) => setLocation(event.target.value)}
-              required
-              type="text"
-              value={location}
-            />
-          </label>
-
-          <label>
-            申報項目 *
-            <select
-              onChange={(event) => setItemId(event.target.value)}
-              required
-              value={itemId}
-            >
-              {items.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            申報事由 *
-            <textarea
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="例如：舟山路靠近轉角處路面破損，行人與腳踏車經過時容易絆倒。"
-              required
-              rows={4}
-              value={description}
-            />
-          </label>
-
-          <label>
-            相片說明
-            <input
-              onChange={(event) => setMoreInfo(event.target.value)}
-              type="text"
-              value={moreInfo}
-            />
-          </label>
+        <section className="app-card captcha-card" aria-label="驗證碼">
+          <div className="card-title">
+            <span>4</span>
+            <div>
+              <h2>驗證碼</h2>
+              <p>輸入 NTU 表單上的 5 碼驗證碼。</p>
+            </div>
+          </div>
 
           <div className="captcha-box">
-            <div>
-              <span>驗證碼 *</span>
-              <div className="captcha-image">
-                {captcha.loading ? (
-                  <span>載入中</span>
-                ) : captcha.imageUrl ? (
-                  <img alt="NTU 報修驗證碼" src={captcha.imageUrl} />
-                ) : (
-                  <span>無法載入</span>
-                )}
-              </div>
+            <div className="captcha-image">
+              {captcha.loading ? (
+                <span>載入中</span>
+              ) : captcha.imageUrl ? (
+                <img alt="NTU 報修驗證碼" src={captcha.imageUrl} />
+              ) : (
+                <span>無法載入</span>
+              )}
             </div>
-            <button className="ghost-button" type="button" onClick={refreshCaptcha}>
-              更換
+            <button className="soft-button" type="button" onClick={refreshCaptcha}>
+              換一張
             </button>
             <input
               inputMode="text"
@@ -506,12 +528,15 @@ export function RoadReportApp() {
           </div>
 
           {captcha.error ? <p className="error-text">{captcha.error}</p> : null}
-          {submitMessage ? (
-            <p className={submitState === "success" ? "success-text" : "error-text"}>
-              {submitMessage}
-            </p>
-          ) : null}
+        </section>
 
+        {submitMessage ? (
+          <p className={submitState === "success" ? "success-text" : "error-text"}>
+            {submitMessage}
+          </p>
+        ) : null}
+
+        <div className="bottom-dock">
           <button
             className="submit-button"
             disabled={submitState === "submitting" || captcha.loading}
@@ -519,7 +544,7 @@ export function RoadReportApp() {
           >
             {submitState === "submitting" ? "送出中..." : "送出報修"}
           </button>
-        </section>
+        </div>
       </form>
     </main>
   );
