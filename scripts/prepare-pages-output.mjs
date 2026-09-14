@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 const serverDir = new URL("../dist/server/", import.meta.url);
 const clientDir = new URL("../dist/client/", import.meta.url);
+const deployConfig = new URL("../.wrangler/deploy/config.json", import.meta.url);
 
 async function assertExists(path, label) {
   try {
@@ -34,3 +35,10 @@ for (const entry of await readdir(serverDir, { withFileTypes: true })) {
     await copyFile(from, to);
   }
 }
+
+// Cloudflare Pages validates the Wrangler config again after the build. The
+// Cloudflare Vite plugin writes a deploy redirect to dist/server/wrangler.json,
+// which is a Worker config and is rejected by Pages projects. The Pages-ready
+// artifact is dist/client/_worker.js, so remove the redirect and generated file.
+await rm(new URL("wrangler.json", serverDir), { force: true });
+await rm(deployConfig, { force: true });

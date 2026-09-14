@@ -89,6 +89,8 @@ test("prepares Cloudflare Pages advanced mode output", async () => {
 
   await access(new URL("../dist/client/_worker.js", import.meta.url));
   await access(new URL("../dist/client/ssr/index.js", import.meta.url));
+  await assert.rejects(access(new URL("../dist/server/wrangler.json", import.meta.url)));
+  await assert.rejects(access(new URL("../.wrangler/deploy/config.json", import.meta.url)));
   assert.ok(assets.some((file) => file.startsWith("RoadReportApp-")));
   assert.ok(assets.some((file) => file.startsWith("leaflet-src-")));
 });
