@@ -18,7 +18,18 @@ export async function onRequestGet({
   }
 
   if (!env.CARTO_API_KEY) {
-    return jsonResponse({ error: "CARTO_API_KEY is not configured" }, { status: 503 });
+    return jsonResponse(
+      {
+        error:
+          "CARTO_API_KEY is not configured. Set the secret for this Cloudflare Pages environment and redeploy.",
+      },
+      {
+        status: 503,
+        headers: {
+          "x-road-report-config": "missing-carto-api-key",
+        },
+      },
+    );
   }
 
   const y = tile.replace(/\.png$/, "");

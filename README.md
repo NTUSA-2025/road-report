@@ -38,9 +38,11 @@ Cloudflare Pages 設定：
 - Build command: `npm run build`
 - Build output directory: `dist`
 - Wrangler config: `wrangler.toml`
-- Environment variables: `CARTO_API_KEY`
+- Secret: `CARTO_API_KEY`
 
 `npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
+
+`wrangler.toml` 會把 `CARTO_API_KEY` 宣告成 required secret。請在 Cloudflare Pages 對應環境設定 secret 後重新部署；若 production 與 preview 都會用地圖，兩個環境都需要設定。
 
 未來若要接 Cloudflare D1、KV 或 R2，先建立正式/preview 資源，再把 `wrangler.toml` 內的範例 binding 取消註解並填入實際 ID。
 

@@ -4,6 +4,9 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
 send_metrics = false
 
+[secrets]
+required = ["CARTO_API_KEY"]
+
 # Cloudflare Pages build settings:
 # Build command: npm run build
 # Build output directory: dist

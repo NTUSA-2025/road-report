@@ -54,11 +54,14 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(wrangler, /pages_build_output_dir = "\.\/dist"/);
   assert.match(wrangler, /compatibility_date = "2026-09-14"/);
   assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
+  assert.match(wrangler, /\[secrets\]/);
+  assert.match(wrangler, /required = \["CARTO_API_KEY"\]/);
   assert.match(viteConfig, /@vitejs\/plugin-react/);
   assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
   assert.match(ntu, /fetchCreateSession/);
   assert.match(tile, /CARTO_API_KEY\?: string/);
   assert.match(tile, /api_key/);
+  assert.match(tile, /x-road-report-config/);
   assert.equal(envExample.trim(), "CARTO_API_KEY=");
   await assert.rejects(access(new URL("../app/page.tsx", import.meta.url)));
   await assert.rejects(access(new URL("../worker/index.ts", import.meta.url)));
