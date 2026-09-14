@@ -1,12 +1,12 @@
 name = "road-report"
 compatibility_date = "2026-09-14"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = "./dist/client"
+pages_build_output_dir = "./dist"
 send_metrics = false
 
 # Cloudflare Pages build settings:
 # Build command: npm run build
-# Build output directory: dist/client
+# Build output directory: dist
 #
 # Future binding examples. Keep these commented until real Cloudflare resource
 # IDs/names exist; otherwise Wrangler will treat them as active bindings.

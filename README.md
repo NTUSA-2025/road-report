@@ -2,6 +2,12 @@
 
 手機優先的臺大道路狀況回報工具。使用者可以用地圖標記位置、拍照或選擇照片、讀取 JPEG EXIF 拍攝日期與 GPS 座標，最後透過後端 proxy 將資料送到 NTU 公共設施報修表單。
 
+本專案採 Cloudflare Pages 原生架構：
+
+- `src/`：Vite + React 前端
+- `functions/`：Cloudflare Pages Functions API
+- `dist/`：Pages 靜態輸出目錄
+
 ## 功能
 
 - 地圖預設在臺大校園，支援手機定位與點選地圖更新座標
@@ -30,11 +36,11 @@ Cloudflare Pages 設定：
 
 - Project name: `road-report`
 - Build command: `npm run build`
-- Build output directory: `dist/client`
+- Build output directory: `dist`
 - Wrangler config: `wrangler.toml`
 - Environment variables: `CARTO_API_KEY`
 
-`npm run build` 會先執行 vinext build，再由 `scripts/prepare-pages-output.mjs` 將 server bundle 整理成 Pages advanced mode 使用的 `dist/client/_worker.js`。不要手動修改 `dist/` 內的檔案。
+`npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
 
 未來若要接 Cloudflare D1、KV 或 R2，先建立正式/preview 資源，再把 `wrangler.toml` 內的範例 binding 取消註解並填入實際 ID。
 

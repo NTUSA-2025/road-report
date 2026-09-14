@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
-import { ntuUrl, readRepairSession } from "../ntu";
+import { jsonResponse } from "../../_lib/http";
+import { ntuUrl, readRepairSession } from "../../_lib/ntu";
+import type { PagesContext } from "../../_lib/types";
 
-export async function GET(request: Request) {
+export async function onRequestGet({ request }: PagesContext) {
   const session = readRepairSession(request);
 
   if (!session) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "驗證碼工作階段已過期，請重新整理頁面。" },
       { status: 440 },
     );
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
   );
 
   if (!response.ok || !response.body) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "無法取得 NTU 驗證碼圖片。" },
       { status: 502 },
     );

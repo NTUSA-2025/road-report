@@ -1,17 +1,18 @@
-import { NextResponse } from "next/server";
+import { jsonResponse, methodNotAllowed } from "../../../_lib/http";
 import {
+  appendRepairSessionCookie,
   captchaUrl,
   mergeCookieHeaders,
   ntuUrl,
   readRepairSession,
-  writeRepairSession,
-} from "../../ntu";
+} from "../../../_lib/ntu";
+import type { PagesContext } from "../../../_lib/types";
 
-export async function POST(request: Request) {
+export async function onRequestPost({ request }: PagesContext) {
   const session = readRepairSession(request);
 
   if (!session) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "驗證碼工作階段已過期，請重新整理頁面。" },
       { status: 440 },
     );
@@ -37,20 +38,27 @@ export async function POST(request: Request) {
   const capId = payload?.capId;
 
   if (!ntuResponse.ok || !capId) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "無法更換 NTU 驗證碼。" },
       { status: 502 },
     );
   }
 
-  const response = NextResponse.json({
-    captchaUrl: captchaUrl(),
-  });
-  writeRepairSession(response, {
+  const headers = new Headers();
+  appendRepairSessionCookie(headers, request, {
     ...session,
     cookies: mergeCookieHeaders(session.cookies, ntuResponse),
     capId,
   });
 
-  return response;
+  return jsonResponse(
+    {
+      captchaUrl: captchaUrl(),
+    },
+    { headers },
+  );
+}
+
+export function onRequestGet() {
+  return methodNotAllowed(["POST"]);
 }

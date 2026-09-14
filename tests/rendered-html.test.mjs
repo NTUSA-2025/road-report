@@ -2,64 +2,38 @@ import assert from "node:assert/strict";
 import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
-}
-
-test("server-renders the road report app shell", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
-  const html = await response.text();
+test("builds the road report app shell", async () => {
+  const html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
   assert.match(html, /<title>臺大道路狀況回報<\/title>/i);
-  assert.match(html, /臺大道路狀況回報/);
-  assert.match(html, /道路狀況回報/);
-  assert.match(html, /先留下現場畫面/);
-  assert.match(html, /下一步/);
-  assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/);
+  assert.match(html, /<div id="root"><\/div>/);
+  assert.match(html, /type="module"/);
+  assert.doesNotMatch(html, /_worker|__next|vinext|react-loading-skeleton|codex-preview/);
   assert.doesNotMatch(html, /NTU Road Report/);
 });
 
-test("keeps starter preview removed", async () => {
-  const [page, app, layout, packageJson, css, favicon, wrangler, worker, viteConfig, envExample] = await Promise.all([
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/RoadReportApp.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+test("uses native Cloudflare Pages structure", async () => {
+  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, tile] = await Promise.all([
+    readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../index.html", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../src/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
     readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
-    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
+    readFile(new URL("../functions/_lib/ntu.ts", import.meta.url), "utf8"),
+    readFile(new URL("../functions/api/map/tiles/[style]/[z]/[x]/[tile].ts", import.meta.url), "utf8"),
   ]);
 
-  assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
+  assert.match(main, /createRoot/);
+  assert.match(html, /\/src\/main\.tsx/);
   assert.match(app, /from "lucide-react"/);
   assert.match(app, /await import\("leaflet"\)/);
   assert.match(app, /\/api\/map\/tiles\/light_all\/\{z\}\/\{x\}\/\{y\}\.png/);
   assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
   assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
-  assert.doesNotMatch(layout, /Starter Project|next\/font\/google/);
-  assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.doesNotMatch(packageJson, /react-loading-skeleton|vinext|eslint-config-next|next"/);
   assert.match(packageJson, /"leaflet"/);
   assert.match(packageJson, /"@types\/leaflet"/);
   assert.match(packageJson, /"lucide-react"/);
@@ -70,27 +44,31 @@ test("keeps starter preview removed", async () => {
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
   assert.match(favicon, /stroke="#17624f"/);
   assert.match(wrangler, /name = "road-report"/);
-  assert.match(wrangler, /pages_build_output_dir = "\.\/dist\/client"/);
+  assert.match(wrangler, /pages_build_output_dir = "\.\/dist"/);
   assert.match(wrangler, /compatibility_date = "2026-09-14"/);
   assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
-  assert.match(worker, /CARTO_API_KEY\?: string/);
-  assert.match(worker, /CARTO_TILE_PATH_RE/);
-  assert.match(worker, /api_key/);
-  assert.match(viteConfig, /loadEnv\(mode, process\.cwd\(\), ""\)/);
-  assert.match(viteConfig, /CARTO_API_KEY/);
+  assert.match(viteConfig, /@vitejs\/plugin-react/);
+  assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
+  assert.match(ntu, /fetchCreateSession/);
+  assert.match(tile, /CARTO_API_KEY\?: string/);
+  assert.match(tile, /api_key/);
   assert.equal(envExample.trim(), "CARTO_API_KEY=");
+  await assert.rejects(access(new URL("../app/page.tsx", import.meta.url)));
+  await assert.rejects(access(new URL("../worker/index.ts", import.meta.url)));
+  await assert.rejects(access(new URL("../scripts/prepare-pages-output.mjs", import.meta.url)));
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
 });
 
-test("prepares Cloudflare Pages advanced mode output", async () => {
-  const assets = await readdir(new URL("../dist/client/assets/", import.meta.url));
+test("prepares Cloudflare Pages static output", async () => {
+  const assets = await readdir(new URL("../dist/assets/", import.meta.url));
 
-  await access(new URL("../dist/client/_worker.js", import.meta.url));
-  await access(new URL("../dist/client/ssr/index.js", import.meta.url));
+  await access(new URL("../dist/index.html", import.meta.url));
+  await assert.rejects(access(new URL("../dist/_worker.js", import.meta.url)));
+  await assert.rejects(access(new URL("../dist/server/index.js", import.meta.url)));
   await assert.rejects(access(new URL("../dist/server/wrangler.json", import.meta.url)));
   await assert.rejects(access(new URL("../.wrangler/deploy/config.json", import.meta.url)));
-  assert.ok(assets.some((file) => file.startsWith("RoadReportApp-")));
+  assert.ok(assets.some((file) => file.startsWith("index-") && file.endsWith(".js")));
   assert.ok(assets.some((file) => file.startsWith("leaflet-src-")));
 });

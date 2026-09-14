@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 const NTU_ORIGIN = "https://my.ntu.edu.tw";
 const CREATE_PATH = "/repairservice2/PublicRepair/Create";
 const SESSION_COOKIE = "rr_ntu_repair";
@@ -70,16 +68,12 @@ export function readRepairSession(request: Request): RepairSession | null {
   return null;
 }
 
-export function writeRepairSession(response: NextResponse, session: RepairSession) {
-  response.cookies.set({
-    name: SESSION_COOKIE,
-    value: toBase64Url(JSON.stringify(session)),
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 15 * 60,
-  });
+export function appendRepairSessionCookie(headers: Headers, request: Request, session: RepairSession) {
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  headers.append(
+    "set-cookie",
+    `${SESSION_COOKIE}=${toBase64Url(JSON.stringify(session))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${15 * 60}${secure}`,
+  );
 }
 
 export function ntuUrl(path: string) {
@@ -120,9 +114,7 @@ function cookieHeaderFromResponse(response: Response) {
     return "";
   }
 
-  return values
-    .map((cookie) => cookie.split(";")[0])
-    .join("; ");
+  return values.map((cookie) => cookie.split(";")[0]).join("; ");
 }
 
 function splitSetCookie(header: string) {

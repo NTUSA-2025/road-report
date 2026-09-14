@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { jsonResponse, methodNotAllowed } from "../../_lib/http";
 import {
+  appendRepairSessionCookie,
   createPath,
   fetchCreateSession,
   mergeCookieHeaders,
   readRepairSession,
-  writeRepairSession,
-} from "../ntu";
+} from "../../_lib/ntu";
+import type { PagesContext } from "../../_lib/types";
 
 const REQUIRED_FIELDS = [
   "ApplicantPhone",
@@ -15,11 +16,11 @@ const REQUIRED_FIELDS = [
   "CapAns",
 ];
 
-export async function POST(request: Request) {
+export async function onRequestPost({ request }: PagesContext) {
   const session = readRepairSession(request);
 
   if (!session) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "驗證碼工作階段已過期，請重新整理頁面後再送出。" },
       { status: 440 },
     );
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   const image = incoming.get("ImageFiles");
 
   if (missing || !(image instanceof File) || image.size === 0) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "請確認必填欄位、照片與驗證碼都已填寫。" },
       { status: 400 },
     );
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
   const location = ntuResponse.headers.get("location") ?? "";
 
   if (ntuResponse.status >= 300 && ntuResponse.status < 400) {
-    return NextResponse.json({
+    return jsonResponse({
       message: "NTU 報修表單已接受送出，請留意通知信或後續查詢頁。",
       redirect: location,
     });
@@ -79,30 +80,34 @@ export async function POST(request: Request) {
 
   if (!ntuResponse.ok || validationError) {
     const fresh = await fetchCreateSession().catch(() => null);
-    const response = NextResponse.json(
-      {
-        error:
-          validationError ||
-          "NTU 表單沒有接受這次送出，請檢查欄位或重新輸入驗證碼。",
-      },
-      { status: 422 },
-    );
+    const headers = new Headers();
 
     if (fresh) {
-      writeRepairSession(response, fresh.session);
+      appendRepairSessionCookie(headers, request, fresh.session);
     } else {
-      writeRepairSession(response, {
+      appendRepairSessionCookie(headers, request, {
         ...session,
         cookies: mergeCookieHeaders(session.cookies, ntuResponse),
       });
     }
 
-    return response;
+    return jsonResponse(
+      {
+        error:
+          validationError ||
+          "NTU 表單沒有接受這次送出，請檢查欄位或重新輸入驗證碼。",
+      },
+      { status: 422, headers },
+    );
   }
 
-  return NextResponse.json({
+  return jsonResponse({
     message: "已送出到 NTU 報修表單。",
   });
+}
+
+export function onRequestGet() {
+  return methodNotAllowed(["POST"]);
 }
 
 function textValue(formData: FormData, key: string) {

@@ -1,6 +1,3 @@
-"use client";
-
-/* eslint-disable @next/next/no-img-element */
 import {
   ArrowLeft,
   ArrowRight,
@@ -286,6 +283,13 @@ export function RoadReportApp() {
       setSubmitState("error");
       setSubmitMessage(`請先完成「${STEPS[missing].title}」再送出。`);
       setCurrentStep(missing);
+      return;
+    }
+
+    if (!photo) {
+      setSubmitState("error");
+      setSubmitMessage("請先拍照或選擇照片。");
+      setCurrentStep(0);
       return;
     }
 
