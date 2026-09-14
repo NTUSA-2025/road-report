@@ -60,8 +60,7 @@
 | `Latitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
 | `Longitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
 | `photoMeta.coordinates` | 前端狀態，用於從照片 EXIF 更新地圖位置。 |
-| `captchaUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，主要為後端即時抓取 NTU captcha 後轉成的 `data:` 圖片 URL。 |
-| `captchaProxyUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，保留本站 captcha proxy URL 作為除錯與備援。 |
+| `captchaUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，用於顯示本站 captcha proxy 圖片。 |
 
 ## NTU session 與 captcha
 
@@ -69,7 +68,7 @@
 | --- | --- | --- | --- |
 | NTU cookies | NTU `PublicRepair/Create` response `Set-Cookie` | 本站 HttpOnly cookie `rr_ntu_repair` 內的 `cookies` | 取得 captcha 圖片、刷新 captcha、送出 NTU 表單。 |
 | `__RequestVerificationToken` | NTU `PublicRepair/Create` hidden input | `rr_ntu_repair.requestVerificationToken` | NTU 表單 CSRF 驗證。 |
-| `CapId` | NTU `PublicRepair/Create` hidden input，或 `/repairservice2/Captcha/Change` response | `rr_ntu_repair.capId` | 後端用同一組 NTU cookies 取得對應 captcha 圖片，並在送出時與 `CapAns` 一起送回 NTU。 |
+| `CapId` | NTU `PublicRepair/Create` hidden input，或 `/repairservice2/Captcha/Change` response | `rr_ntu_repair.capId` | 取得對應 captcha 圖片，並在送出時與 `CapAns` 一起送回 NTU。 |
 | `CapAns` | 使用者輸入 | 不保存，只在送出時轉送 | NTU captcha 答案。 |
 
 ## 目前必填檢查

@@ -1,23 +1,16 @@
 import { jsonResponse, methodNotAllowed } from "../../_lib/http";
-import {
-  appendRepairSessionCookie,
-  captchaUrl,
-  fetchCaptchaImageDataUrl,
-  fetchCreateSession,
-} from "../../_lib/ntu";
+import { appendRepairSessionCookie, captchaUrl, fetchCreateSession } from "../../_lib/ntu";
 import type { PagesContext } from "../../_lib/types";
 
 export async function onRequestPost({ request }: PagesContext) {
   try {
     const { session, items } = await fetchCreateSession();
-    const captchaImageUrl = await fetchCaptchaImageDataUrl(session);
     const headers = new Headers();
     appendRepairSessionCookie(headers, request, session);
 
     return jsonResponse(
       {
-        captchaUrl: captchaImageUrl,
-        captchaProxyUrl: captchaUrl(),
+        captchaUrl: captchaUrl(),
         items,
       },
       { headers },

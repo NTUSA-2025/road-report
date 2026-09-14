@@ -12,7 +12,7 @@ test("builds the road report app shell", async () => {
 });
 
 test("uses native Cloudflare Pages structure", async () => {
-  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, session, refresh, submit, tile] = await Promise.all([
+  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, submit, tile] = await Promise.all([
     readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
@@ -23,8 +23,6 @@ test("uses native Cloudflare Pages structure", async () => {
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../functions/_lib/ntu.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/api/repair/session.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/api/repair/captcha/refresh.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/repair/submit.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/map/tiles/[style]/[z]/[x]/[tile].ts", import.meta.url), "utf8"),
   ]);
@@ -55,7 +53,6 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);
   assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
   assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
-  assert.match(app, /url\.startsWith\("data:"\)/);
   assert.match(app, /const separator = url\.includes\("\?"\) \? "&" : "\?"/);
   assert.doesNotMatch(app, /captchaUrl\}&v=/);
   assert.match(app, /請先填寫道路狀況描述。/);
@@ -85,12 +82,6 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(viteConfig, /@vitejs\/plugin-react/);
   assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
   assert.match(ntu, /fetchCreateSession/);
-  assert.match(ntu, /fetchCaptchaImageDataUrl/);
-  assert.match(ntu, /data:\$\{contentType\};base64/);
-  assert.match(session, /captchaUrl: captchaImageUrl/);
-  assert.match(session, /captchaProxyUrl: captchaUrl\(\)/);
-  assert.match(refresh, /captchaUrl: captchaImageUrl/);
-  assert.match(refresh, /captchaProxyUrl: captchaUrl\(\)/);
   assert.match(submit, /"Latitude"/);
   assert.match(submit, /"Longitude"/);
   assert.match(submit, /upstream\.set\("Location", coordinatesValue\(incoming\)/);

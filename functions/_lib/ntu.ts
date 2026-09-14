@@ -17,30 +17,6 @@ export function captchaUrl() {
   return "/api/repair/captcha";
 }
 
-export async function fetchCaptchaImageDataUrl(session: RepairSession) {
-  const response = await fetch(
-    ntuUrl(`/repairservice2/Captcha/Img?capId=${encodeURIComponent(session.capId)}`),
-    {
-      headers: {
-        accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        cookie: session.cookies,
-        referer: createPath(),
-        "user-agent": "road-report/0.1",
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("無法取得 NTU 驗證碼圖片。");
-  }
-
-  const contentType = response.headers.get("content-type")?.split(";")[0] || "image/gif";
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  const base64 = bytesToBase64(bytes);
-
-  return `data:${contentType};base64,${base64}`;
-}
-
 export async function fetchCreateSession() {
   const response = await fetch(`${NTU_ORIGIN}${CREATE_PATH}`, {
     headers: {
@@ -131,15 +107,14 @@ function cookieHeaderFromResponse(response: Response) {
   const headers = response.headers as Headers & {
     getSetCookie?: () => string[];
   };
-  const values = headers.getSetCookie?.() ?? [];
-  const fallback = response.headers.get("set-cookie") ?? "";
-  const cookieHeaders = values.length > 0 ? values : splitSetCookie(fallback);
+  const raw = headers.getSetCookie?.() ?? response.headers.get("set-cookie") ?? "";
+  const values = Array.isArray(raw) ? raw : splitSetCookie(raw);
 
-  if (cookieHeaders.length === 0) {
+  if (values.length === 0) {
     return "";
   }
 
-  return cookieHeaders.map((cookie) => cookie.split(";")[0]).join("; ");
+  return values.map((cookie) => cookie.split(";")[0]).join("; ");
 }
 
 function splitSetCookie(header: string) {
@@ -183,7 +158,13 @@ function decodeHtml(value: string) {
 
 function toBase64Url(value: string) {
   const bytes = new TextEncoder().encode(value);
-  return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function fromBase64Url(value: string) {
@@ -194,14 +175,4 @@ function fromBase64Url(value: string) {
   const binary = atob(padded);
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
   return new TextDecoder().decode(bytes);
-}
-
-function bytesToBase64(bytes: Uint8Array) {
-  let binary = "";
-
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return btoa(binary);
 }

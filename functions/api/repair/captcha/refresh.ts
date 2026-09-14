@@ -2,7 +2,6 @@ import { jsonResponse, methodNotAllowed } from "../../../_lib/http";
 import {
   appendRepairSessionCookie,
   captchaUrl,
-  fetchCaptchaImageDataUrl,
   mergeCookieHeaders,
   ntuUrl,
   readRepairSession,
@@ -45,27 +44,16 @@ export async function onRequestPost({ request }: PagesContext) {
     );
   }
 
-  const refreshedSession = {
+  const headers = new Headers();
+  appendRepairSessionCookie(headers, request, {
     ...session,
     cookies: mergeCookieHeaders(session.cookies, ntuResponse),
     capId,
-  };
-  const captchaImageUrl = await fetchCaptchaImageDataUrl(refreshedSession).catch(() => "");
-
-  if (!captchaImageUrl) {
-    return jsonResponse(
-      { error: "無法取得 NTU 驗證碼圖片。" },
-      { status: 502 },
-    );
-  }
-
-  const headers = new Headers();
-  appendRepairSessionCookie(headers, request, refreshedSession);
+  });
 
   return jsonResponse(
     {
-      captchaUrl: captchaImageUrl,
-      captchaProxyUrl: captchaUrl(),
+      captchaUrl: captchaUrl(),
     },
     { headers },
   );
