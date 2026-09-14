@@ -18,6 +18,12 @@ npm install
 npm run build
 ```
 
+建立 `.env` 並填入 CARTO API key：
+
+```bash
+CARTO_API_KEY=your-carto-api-key
+```
+
 ## Cloudflare Pages
 
 Cloudflare Pages 設定：
@@ -26,6 +32,7 @@ Cloudflare Pages 設定：
 - Build command: `npm run build`
 - Build output directory: `dist/client`
 - Wrangler config: `wrangler.toml`
+- Environment variables: `CARTO_API_KEY`
 
 `npm run build` 會先執行 vinext build，再由 `scripts/prepare-pages-output.mjs` 將 server bundle 整理成 Pages advanced mode 使用的 `dist/client/_worker.js`。不要手動修改 `dist/` 內的檔案。
 

@@ -39,7 +39,7 @@ test("server-renders the road report app shell", async () => {
 });
 
 test("keeps starter preview removed", async () => {
-  const [page, app, layout, packageJson, css, favicon, wrangler] = await Promise.all([
+  const [page, app, layout, packageJson, css, favicon, wrangler, worker, viteConfig, envExample] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -47,12 +47,16 @@ test("keeps starter preview removed", async () => {
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
     readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
   assert.match(app, /from "lucide-react"/);
   assert.match(app, /await import\("leaflet"\)/);
-  assert.match(app, /basemaps\.cartocdn\.com\/light_all/);
+  assert.match(app, /\/api\/map\/tiles\/light_all\/\{z\}\/\{x\}\/\{y\}\.png/);
+  assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
   assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
   assert.doesNotMatch(layout, /Starter Project|next\/font\/google/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
@@ -69,6 +73,12 @@ test("keeps starter preview removed", async () => {
   assert.match(wrangler, /pages_build_output_dir = "\.\/dist\/client"/);
   assert.match(wrangler, /compatibility_date = "2026-09-14"/);
   assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
+  assert.match(worker, /CARTO_API_KEY\?: string/);
+  assert.match(worker, /CARTO_TILE_PATH_RE/);
+  assert.match(worker, /api_key/);
+  assert.match(viteConfig, /loadEnv\(mode, process\.cwd\(\), ""\)/);
+  assert.match(viteConfig, /CARTO_API_KEY/);
+  assert.equal(envExample.trim(), "CARTO_API_KEY=");
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));

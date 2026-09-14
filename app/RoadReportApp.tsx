@@ -693,10 +693,9 @@ function LowInterferenceMap({
       }).setView([initialCoords.lat, initialCoords.lng], 18);
 
       L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        "/api/map/tiles/light_all/{z}/{x}/{y}.png",
         {
           maxZoom: 20,
-          subdomains: "abcd",
           attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
         },
       ).addTo(map);
