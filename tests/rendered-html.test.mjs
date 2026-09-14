@@ -32,7 +32,8 @@ test("server-renders the road report app shell", async () => {
   assert.match(html, /<title>臺大道路狀況回報<\/title>/i);
   assert.match(html, /臺大道路狀況回報/);
   assert.match(html, /道路狀況回報/);
-  assert.match(html, /送到臺大公設報修/);
+  assert.match(html, /先留下現場畫面/);
+  assert.match(html, /下一步/);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/);
   assert.doesNotMatch(html, /NTU Road Report/);
 });
