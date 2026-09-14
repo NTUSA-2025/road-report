@@ -586,7 +586,7 @@ export function RoadReportApp() {
                   <span>4</span>
                   <div>
                     <h2>聯絡資料</h2>
-                    <p>電話為必填，姓名與信箱不公開。</p>
+                    <p>電話、姓名與信箱不公開。</p>
                   </div>
                 </div>
 
