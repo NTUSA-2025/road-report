@@ -1045,6 +1045,10 @@ function hasValidCoordinates(coordinates: Coordinates) {
 }
 
 function cacheBustUrl(url: string) {
+  if (url.startsWith("data:")) {
+    return url;
+  }
+
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}v=${Date.now()}`;
 }
