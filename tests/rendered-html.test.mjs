@@ -37,6 +37,10 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /function ReportOverviewMap/);
   assert.match(app, /回報狀況總覽/);
   assert.match(app, /總覽/);
+  assert.match(app, /onTouchStart=\{handlePullStart\}/);
+  assert.match(app, /window\.location\.reload\(\)/);
+  assert.match(app, /function canStartPullRefresh/);
+  assert.match(app, /\.leaflet-container,\s*\.map-canvas,\s*\.overview-map-canvas/);
   assert.match(app, /Upload/);
   assert.match(app, /await import\("leaflet"\)/);
   assert.match(app, /\/api\/map\/tiles\/light_all\/\{z\}\/\{x\}\/\{y\}\.png/);
@@ -66,6 +70,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(css, /\.leaflet-report-marker/);
   assert.match(css, /\.leaflet-overview-marker/);
   assert.match(css, /\.overview-report-panel/);
+  assert.match(css, /\.pull-refresh-indicator/);
   assert.match(css, /height:\s*var\(--app-height,\s*100dvh\)/);
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);

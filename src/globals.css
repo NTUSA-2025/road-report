@@ -70,11 +70,50 @@ button:disabled {
 }
 
 .mobile-app-shell {
+  position: relative;
   width: min(100%, 680px);
   height: var(--app-height, 100dvh);
   margin: 0 auto;
   overflow: hidden;
   padding: 0 12px;
+}
+
+.pull-refresh-indicator {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 900;
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(23, 98, 79, 0.16);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--brand-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 24px rgba(20, 38, 30, 0.16);
+  transition:
+    opacity 130ms ease,
+    transform 150ms ease;
+}
+
+.pull-refresh-indicator.is-ready,
+.pull-refresh-indicator.is-refreshing {
+  opacity: 1;
+}
+
+.pull-refresh-indicator.is-ready {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.pull-refresh-indicator.is-refreshing svg {
+  animation: spin 820ms linear infinite;
 }
 
 .report-app {
@@ -230,6 +269,12 @@ button:disabled {
   overflow: hidden;
   padding-top: 2px;
   animation: pageIn 150ms ease-out;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pageIn {

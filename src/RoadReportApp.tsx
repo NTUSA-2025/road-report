@@ -38,6 +38,10 @@ type CaptchaState = {
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 type AppView = "report" | "overview";
+type PullRefreshState = {
+  distance: number;
+  refreshing: boolean;
+};
 
 type ReportSummary = {
   id: string;
@@ -73,6 +77,9 @@ const STEPS = [
   { title: "驗證", hint: "送出前輸入驗證碼" },
 ] as const;
 
+const PULL_REFRESH_TRIGGER_DISTANCE = 72;
+const PULL_REFRESH_MAX_DISTANCE = 92;
+
 const SAMPLE_REPORTS: ReportSummary[] = [
   {
     id: "rr-001",
@@ -106,6 +113,9 @@ const SAMPLE_REPORTS: ReportSummary[] = [
 export function RoadReportApp() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const pullStartYRef = useRef<number | null>(null);
+  const pullDistanceRef = useRef(0);
+  const pullActiveRef = useRef(false);
   const [appView, setAppView] = useState<AppView>("report");
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState<Coordinates>(DEFAULT_COORDS);
@@ -132,6 +142,10 @@ export function RoadReportApp() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
   const [geoMessage, setGeoMessage] = useState("地圖預設在臺大校園，可用定位或點選地圖修正。");
+  const [pullRefresh, setPullRefresh] = useState<PullRefreshState>({
+    distance: 0,
+    refreshing: false,
+  });
 
   useEffect(() => {
     function setAppHeight() {
@@ -440,8 +454,83 @@ export function RoadReportApp() {
     return "";
   }
 
+  function handlePullStart(event: React.TouchEvent<HTMLElement>) {
+    if (
+      pullRefresh.refreshing ||
+      event.touches.length !== 1 ||
+      !canStartPullRefresh(event.target)
+    ) {
+      return;
+    }
+
+    pullStartYRef.current = event.touches[0].clientY;
+    pullDistanceRef.current = 0;
+    pullActiveRef.current = false;
+  }
+
+  function handlePullMove(event: React.TouchEvent<HTMLElement>) {
+    if (pullStartYRef.current == null || event.touches.length !== 1) {
+      return;
+    }
+
+    const rawDistance = event.touches[0].clientY - pullStartYRef.current;
+    if (rawDistance <= 0) {
+      pullDistanceRef.current = 0;
+      pullActiveRef.current = false;
+      setPullRefresh((current) => ({ ...current, distance: 0 }));
+      return;
+    }
+
+    if (rawDistance > 8) {
+      pullActiveRef.current = true;
+    }
+
+    if (!pullActiveRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    const distance = Math.min(PULL_REFRESH_MAX_DISTANCE, rawDistance * 0.48);
+    pullDistanceRef.current = distance;
+    setPullRefresh((current) => ({ ...current, distance }));
+  }
+
+  function handlePullEnd() {
+    const shouldRefresh = pullDistanceRef.current >= PULL_REFRESH_TRIGGER_DISTANCE;
+    pullStartYRef.current = null;
+    pullDistanceRef.current = 0;
+    pullActiveRef.current = false;
+
+    if (shouldRefresh) {
+      setPullRefresh({
+        distance: PULL_REFRESH_TRIGGER_DISTANCE,
+        refreshing: true,
+      });
+      window.setTimeout(() => window.location.reload(), 120);
+      return;
+    }
+
+    setPullRefresh((current) => ({ ...current, distance: 0 }));
+  }
+
   return (
-    <main className="mobile-app-shell">
+    <main
+      className="mobile-app-shell"
+      onTouchCancel={handlePullEnd}
+      onTouchEnd={handlePullEnd}
+      onTouchMove={handlePullMove}
+      onTouchStart={handlePullStart}
+    >
+      <div
+        aria-hidden="true"
+        className={`pull-refresh-indicator ${
+          pullRefresh.distance >= PULL_REFRESH_TRIGGER_DISTANCE ? "is-ready" : ""
+        } ${pullRefresh.refreshing ? "is-refreshing" : ""}`}
+        style={{ transform: `translate(-50%, ${pullRefresh.distance - 54}px)` }}
+      >
+        <RefreshCw size={16} strokeWidth={2.6} />
+        <span>{pullRefresh.refreshing ? "重新整理" : "下拉更新"}</span>
+      </div>
       <form
         className={`report-app ${appView === "overview" ? "overview-app" : ""}`}
         noValidate
@@ -1063,6 +1152,16 @@ function hasValidCoordinates(coordinates: Coordinates) {
 function cacheBustUrl(url: string) {
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}v=${Date.now()}`;
+}
+
+function canStartPullRefresh(target: EventTarget) {
+  if (!(target instanceof Element) || window.scrollY > 0) {
+    return false;
+  }
+
+  return !target.closest(
+    "a,button,input,select,textarea,.leaflet-container,.map-canvas,.overview-map-canvas",
+  );
 }
 
 function formatDateForText(date: Date) {
