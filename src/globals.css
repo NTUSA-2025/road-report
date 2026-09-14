@@ -321,7 +321,7 @@ button:disabled {
 .camera-button {
   position: absolute;
   left: 50%;
-  bottom: 92px;
+  bottom: 104px;
   z-index: 3;
   width: min(78%, 340px);
   min-height: 68px;
@@ -337,7 +337,26 @@ button:disabled {
   transform: translateX(-50%);
 }
 
+.upload-photo-button {
+  position: absolute;
+  left: 50%;
+  bottom: 58px;
+  z-index: 3;
+  min-height: 38px;
+  border: 1px solid rgba(15, 63, 52, 0.12);
+  border-radius: 999px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--brand-dark);
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  box-shadow: 0 10px 24px rgba(24, 34, 29, 0.12);
+  transform: translateX(-50%);
+}
+
 .camera-button,
+.upload-photo-button,
 .soft-button,
 .back-button,
 .submit-button {
@@ -806,8 +825,13 @@ button:disabled {
   }
 
   .camera-button {
-    bottom: 78px;
+    bottom: 92px;
     min-height: 58px;
+  }
+
+  .upload-photo-button {
+    bottom: 52px;
+    min-height: 34px;
   }
 
   .photo-meta div,

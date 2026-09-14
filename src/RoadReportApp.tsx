@@ -6,6 +6,7 @@ import {
   LocateFixed,
   RefreshCw,
   Send,
+  Upload,
 } from "lucide-react";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import { useEffect, useRef, useState } from "react";
@@ -60,7 +61,8 @@ const STEPS = [
 ] as const;
 
 export function RoadReportApp() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState<Coordinates>(DEFAULT_COORDS);
   const [items, setItems] = useState<RepairItem[]>(FALLBACK_ITEMS);
@@ -400,11 +402,21 @@ export function RoadReportApp() {
             {currentStep === 0 ? (
               <section className="capture-stage" aria-label="拍照上傳">
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   accept="image/jpeg,image/png,image/bmp"
                   capture="environment"
                   className="file-input"
-                  name="photo"
+                  name="camera-photo"
+                  onChange={(event) =>
+                    handlePhotoSelected(event.target.files?.[0] ?? null)
+                  }
+                  type="file"
+                />
+                <input
+                  ref={uploadInputRef}
+                  accept="image/jpeg,image/png,image/bmp"
+                  className="file-input"
+                  name="uploaded-photo"
                   onChange={(event) =>
                     handlePhotoSelected(event.target.files?.[0] ?? null)
                   }
@@ -430,20 +442,29 @@ export function RoadReportApp() {
                 <button
                   className="camera-button"
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => cameraInputRef.current?.click()}
                 >
                   <Camera aria-hidden="true" size={22} strokeWidth={2.6} />
-                  {photo ? "重拍或換照片" : "拍照"}
+                  {photo ? "重新拍照" : "拍照"}
+                </button>
+
+                <button
+                  className="upload-photo-button"
+                  type="button"
+                  onClick={() => uploadInputRef.current?.click()}
+                >
+                  <Upload aria-hidden="true" size={18} strokeWidth={2.5} />
+                  上傳照片
                 </button>
 
                 <div className="photo-meta">
                   <div>
-                    <span>照片座標</span>
-                    <strong>{photoMeta.coordinates ? "已帶入" : "尚未取得"}</strong>
+                    <span>拍攝日期</span>
+                    <strong>{formatDateForText(takenDate)}</strong>
                   </div>
                   <div>
-                    <span>目前位置</span>
-                    <strong>{coordinateLabel}</strong>
+                    <span>位置資訊</span>
+                    <strong>{photoMeta.coordinates ? "照片已帶入" : "下一步確認"}</strong>
                   </div>
                 </div>
               </section>

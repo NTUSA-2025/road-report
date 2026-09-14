@@ -29,8 +29,15 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(main, /createRoot/);
   assert.match(html, /\/src\/main\.tsx/);
   assert.match(app, /from "lucide-react"/);
+  assert.match(app, /Upload/);
   assert.match(app, /await import\("leaflet"\)/);
   assert.match(app, /\/api\/map\/tiles\/light_all\/\{z\}\/\{x\}\/\{y\}\.png/);
+  assert.match(app, /name="camera-photo"/);
+  assert.match(app, /capture="environment"/);
+  assert.match(app, /name="uploaded-photo"/);
+  assert.match(app, /上傳照片/);
+  assert.doesNotMatch(app, /照片座標/);
+  assert.doesNotMatch(app, /<strong>\{coordinateLabel\}<\/strong>/);
   assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
   assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton|vinext|eslint-config-next|next"/);
