@@ -25,9 +25,9 @@
 | `Reason` | 現況步驟問題描述 | 是 | 回報原因與道路狀況描述。 |
 | `ImageDescription` | 現況步驟照片補充說明 | 否 | 補充照片角度、附近地標等資訊。 |
 | `CapAns` | 驗證步驟 captcha 答案 | 是 | 使用者手動輸入的 NTU captcha。 |
-| `ImageTakenYear` | 現況步驟拍攝日期欄位 | 否 | 由前端 `type="date"` 欄位拆成年份；預設使用照片 EXIF 日期、檔案時間或送出當下日期。 |
-| `ImageTakenMonth` | 現況步驟拍攝日期欄位 | 否 | 由前端 `type="date"` 欄位拆成月份，1 到 12。 |
-| `ImageTakenDay` | 現況步驟拍攝日期欄位 | 否 | 由前端 `type="date"` 欄位拆成日期。 |
+| `ImageTakenYear` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝年份。 |
+| `ImageTakenMonth` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝月份，1 到 12。 |
+| `ImageTakenDay` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝日期。 |
 | `Latitude` | 地圖、裝置定位或照片 EXIF GPS | 是 | 本站位置必填欄位；送出前會檢查必須是 `-90` 到 `90` 之間的有效緯度。 |
 | `Longitude` | 地圖、裝置定位或照片 EXIF GPS | 是 | 本站位置必填欄位；送出前會檢查必須是 `-180` 到 `180` 之間的有效經度。 |
 | `ImageFiles` | 拍照或上傳照片 | 是 | 實際照片檔案。 |
@@ -46,9 +46,9 @@
 | `BrokenItemId` | 前端 `BrokenItemId` | 對應 NTU `BrokenItemId` select option value；本站送出前檢查必填。 |
 | `Reason` | 前端 `Reason` | `textValue()` trim 後送出；本站送出前檢查必填。 |
 | `ImageFiles` | 前端 `ImageFiles` | 以原檔案與原檔名送出。 |
-| `ImageTakenYear` | 前端 `ImageTakenYear` | 來自現況步驟的純日期欄位；若使用者未更改，預設為照片 EXIF 日期、檔案時間或目前日期。 |
-| `ImageTakenMonth` | 前端 `ImageTakenMonth` | 來自現況步驟的純日期欄位；若使用者未更改，預設為照片 EXIF 日期、檔案時間或目前日期。 |
-| `ImageTakenDay` | 前端 `ImageTakenDay` | 來自現況步驟的純日期欄位；若使用者未更改，預設為照片 EXIF 日期、檔案時間或目前日期。 |
+| `ImageTakenYear` | 前端 `ImageTakenYear` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
+| `ImageTakenMonth` | 前端 `ImageTakenMonth` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
+| `ImageTakenDay` | 前端 `ImageTakenDay` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
 | `ImageDescription` | 前端 `ImageDescription` | `textValue()` trim 後送出，可空白。 |
 | `CapId` | `rr_ntu_repair.capId` | 從 NTU `PublicRepair/Create` 頁面 hidden input 取得；刷新 captcha 時更新。 |
 | `CapAns` | 前端 `CapAns` | 使用者輸入的 captcha 答案；本站送出前檢查必填。 |
