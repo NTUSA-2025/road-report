@@ -30,7 +30,12 @@ npm run build
 
 ```bash
 CARTO_API_KEY=your-carto-api-key
+VITE_DEBUG_OUTPUT=false
 ```
+
+這裡使用的是 CARTO Basemaps API key；本站 tile proxy 會依 CARTO Basemaps 新規格把它轉送為 `key` query parameter。
+
+需要檢查地圖 tile proxy 時，可暫時把 `VITE_DEBUG_OUTPUT=true` 後重新 build；production 預設應維持關閉。
 
 ## Cloudflare Pages
 
