@@ -50,9 +50,16 @@ test("keeps starter preview removed", async () => {
 
   assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
   assert.match(app, /from "lucide-react"/);
+  assert.match(app, /await import\("leaflet"\)/);
+  assert.match(app, /basemaps\.cartocdn\.com\/light_all/);
+  assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
   assert.doesNotMatch(layout, /Starter Project|next\/font\/google/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(packageJson, /"leaflet"/);
+  assert.match(packageJson, /"@types\/leaflet"/);
   assert.match(packageJson, /"lucide-react"/);
+  assert.match(css, /@import "leaflet\/dist\/leaflet\.css"/);
+  assert.match(css, /\.leaflet-report-marker/);
   assert.match(css, /height:\s*var\(--app-height,\s*100dvh\)/);
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);

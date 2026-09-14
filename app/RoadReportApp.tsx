@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Send,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
+import { useEffect, useRef, useState } from "react";
 
 type RepairItem = {
   value: string;
@@ -60,8 +61,6 @@ const STEPS = [
   { title: "聯絡", hint: "填寫必要聯絡方式" },
   { title: "驗證", hint: "送出前輸入驗證碼" },
 ] as const;
-
-const zoom = 17;
 
 export function RoadReportApp() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -163,7 +162,6 @@ export function RoadReportApp() {
     };
   }, [photoUrl]);
 
-  const mapTiles = useMemo(() => buildTiles(coords.lat, coords.lng), [coords.lat, coords.lng]);
   const takenDate = photoMeta.takenAt ?? new Date();
   const completionCount = [
     photo,
@@ -275,13 +273,9 @@ export function RoadReportApp() {
     }
   }
 
-  function handleMapTap(event: React.PointerEvent<HTMLButtonElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const next = pointToCoordinates(coords.lat, coords.lng, x, y, rect.width, rect.height);
+  function handleMapChange(next: Coordinates) {
     updateCoords({ ...next, source: "map" });
-    setGeoMessage("已依照點選位置更新座標。");
+    setGeoMessage("已依照地圖位置更新座標。");
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -517,26 +511,7 @@ export function RoadReportApp() {
                   <div className="coord-chip">{coordinateLabel}</div>
                 </div>
 
-                <button
-                  className="map-canvas"
-                  type="button"
-                  onPointerUp={handleMapTap}
-                  aria-label="點選地圖更新位置"
-                >
-                  <div className="tile-grid" aria-hidden="true">
-                    {mapTiles.map((tile) => (
-                      <img
-                        alt=""
-                        draggable={false}
-                        key={`${tile.x}-${tile.y}`}
-                        src={tile.url}
-                      />
-                    ))}
-                  </div>
-                  <div className="map-pin" aria-hidden="true">
-                    <span />
-                  </div>
-                </button>
+                <LowInterferenceMap coords={coords} onChange={handleMapChange} />
 
                 <label className="field-label">
                   報修地點
@@ -683,61 +658,100 @@ export function RoadReportApp() {
   );
 }
 
-function buildTiles(lat: number, lng: number) {
-  const center = lonLatToTile(lng, lat, zoom);
-  const tileX = Math.floor(center.x);
-  const tileY = Math.floor(center.y);
-  const tiles = [];
+function LowInterferenceMap({
+  coords,
+  onChange,
+}: {
+  coords: Coordinates;
+  onChange: (coordinates: Coordinates) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<LeafletMarker | null>(null);
+  const initialCoordsRef = useRef(coords);
+  const onChangeRef = useRef(onChange);
 
-  for (let y = tileY - 1; y <= tileY + 1; y += 1) {
-    for (let x = tileX - 1; x <= tileX + 1; x += 1) {
-      tiles.push({
-        x,
-        y,
-        url: `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`,
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    let disposed = false;
+
+    async function setupMap() {
+      const L = await import("leaflet");
+
+      if (disposed || !containerRef.current || mapRef.current) {
+        return;
+      }
+
+      const initialCoords = initialCoordsRef.current;
+      const map = L.map(containerRef.current, {
+        attributionControl: false,
+        zoomControl: false,
+        scrollWheelZoom: false,
+      }).setView([initialCoords.lat, initialCoords.lng], 18);
+
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        {
+          maxZoom: 20,
+          subdomains: "abcd",
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+        },
+      ).addTo(map);
+
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+      L.control
+        .attribution({ position: "bottomleft", prefix: false })
+        .addTo(map);
+
+      const marker = L.marker([initialCoords.lat, initialCoords.lng], {
+        icon: L.divIcon({
+          className: "leaflet-report-marker",
+          iconAnchor: [14, 30],
+          iconSize: [28, 30],
+        }),
+        keyboard: false,
+      }).addTo(map);
+
+      map.on("click", (event) => {
+        onChangeRef.current({
+          lat: event.latlng.lat,
+          lng: event.latlng.lng,
+          source: "map",
+        });
       });
+
+      mapRef.current = map;
+      markerRef.current = marker;
+      window.requestAnimationFrame(() => map.invalidateSize());
     }
-  }
 
-  return tiles;
-}
+    setupMap();
 
-function pointToCoordinates(
-  centerLat: number,
-  centerLng: number,
-  pointX: number,
-  pointY: number,
-  width: number,
-  height: number,
-) {
-  const center = lonLatToTile(centerLng, centerLat, zoom);
-  const tileOffsetX = (pointX - width / 2) / (width / 3);
-  const tileOffsetY = (pointY - height / 2) / (height / 3);
-  return tileToLonLat(center.x + tileOffsetX, center.y + tileOffsetY, zoom);
-}
+    return () => {
+      disposed = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+    };
+  }, []);
 
-function lonLatToTile(lng: number, lat: number, z: number) {
-  const latRad = (lat * Math.PI) / 180;
-  const scale = 2 ** z;
-  return {
-    x: ((lng + 180) / 360) * scale,
-    y:
-      ((1 -
-        Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
-        2) *
-      scale,
-  };
-}
+  useEffect(() => {
+    const next: [number, number] = [coords.lat, coords.lng];
+    markerRef.current?.setLatLng(next);
+    mapRef.current?.panTo(next, { animate: true, duration: 0.25 });
+  }, [coords.lat, coords.lng]);
 
-function tileToLonLat(x: number, y: number, z: number): Coordinates {
-  const scale = 2 ** z;
-  const lng = (x / scale) * 360 - 180;
-  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale)));
-  return {
-    lat: (latRad * 180) / Math.PI,
-    lng,
-    source: "map",
-  };
+  return (
+    <div
+      aria-label="拖曳或點選地圖更新位置"
+      className="map-canvas"
+      ref={containerRef}
+      role="application"
+    />
+  );
 }
 
 function formatLocation(coordinates: Coordinates) {

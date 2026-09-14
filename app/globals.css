@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   --background: #eef3ef;
@@ -539,38 +540,54 @@ button:disabled {
   border-radius: 8px;
   padding: 0;
   background: #d7e1dc;
-  touch-action: manipulation;
+  isolation: isolate;
 }
 
-.tile-grid {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-}
-
-.tile-grid img {
+.leaflet-container {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  user-select: none;
+  background: #edf1ee;
+  color: var(--foreground);
+  font-family: inherit;
 }
 
-.map-pin {
-  position: absolute;
-  left: 50%;
-  top: 50%;
+.leaflet-tile-pane {
+  filter: saturate(0.45) contrast(0.9) brightness(1.04);
+}
+
+.leaflet-control-zoom {
+  overflow: hidden;
+  border: 1px solid rgba(23, 98, 79, 0.14) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 24px rgba(20, 38, 30, 0.12) !important;
+}
+
+.leaflet-control-zoom a {
+  border: 0 !important;
+  color: var(--brand-dark) !important;
+  font-weight: 900;
+}
+
+.leaflet-control-attribution {
+  max-width: 220px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.68) !important;
+  color: rgba(24, 34, 29, 0.55) !important;
+  font-size: 0.62rem !important;
+}
+
+.leaflet-report-marker {
   width: 30px;
   height: 30px;
   border: 4px solid #ffffff;
   border-radius: 50% 50% 50% 0;
   background: var(--danger);
   box-shadow: 0 10px 24px rgba(24, 34, 29, 0.28);
-  transform: translate(-50%, -100%) rotate(-45deg);
+  transform: rotate(-45deg);
 }
 
-.map-pin span {
+.leaflet-report-marker::after {
+  content: "";
   position: absolute;
   inset: 6px;
   border-radius: 50%;
