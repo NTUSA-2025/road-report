@@ -84,6 +84,22 @@ export function RoadReportApp() {
   const [geoMessage, setGeoMessage] = useState("地圖預設在臺大校園，可用定位或點選地圖修正。");
 
   useEffect(() => {
+    function setAppHeight() {
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty("--app-height", `${height}px`);
+    }
+
+    setAppHeight();
+    window.addEventListener("resize", setAppHeight);
+    window.visualViewport?.addEventListener("resize", setAppHeight);
+
+    return () => {
+      window.removeEventListener("resize", setAppHeight);
+      window.visualViewport?.removeEventListener("resize", setAppHeight);
+    };
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
 
     async function createRepairSession() {
@@ -605,13 +621,16 @@ export function RoadReportApp() {
           </div>
         </section>
 
-        {submitMessage ? (
-          <p className={submitState === "success" ? "success-text" : "error-text"}>
-            {submitMessage}
-          </p>
-        ) : null}
-
         <div className="bottom-dock">
+          {submitMessage ? (
+            <p
+              className={`dock-message ${
+                submitState === "success" ? "success-text" : "error-text"
+              }`}
+            >
+              {submitMessage}
+            </p>
+          ) : null}
           <div className="dock-actions">
             <button
               className="back-button"

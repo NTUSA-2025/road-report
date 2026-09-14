@@ -39,13 +39,17 @@ test("server-renders the road report app shell", async () => {
 });
 
 test("keeps starter preview removed", async () => {
-  const [page, layout, packageJson] = await Promise.all([
+  const [page, layout, packageJson, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
   assert.doesNotMatch(layout, /Starter Project|next\/font\/google/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(css, /height:\s*var\(--app-height,\s*100dvh\)/);
+  assert.match(css, /overflow:\s*hidden/);
+  assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
 });
