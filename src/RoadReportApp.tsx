@@ -123,7 +123,7 @@ export function RoadReportApp() {
           setCaptcha({
             ready: true,
             loading: false,
-            imageUrl: `${payload.captchaUrl}&v=${Date.now()}`,
+            imageUrl: cacheBustUrl(payload.captchaUrl),
             error: "",
           });
           if (Array.isArray(payload.items) && payload.items.length > 0) {
@@ -252,7 +252,7 @@ export function RoadReportApp() {
       setCaptcha({
         ready: true,
         loading: false,
-        imageUrl: `${payload.captchaUrl}&v=${Date.now()}`,
+        imageUrl: cacheBustUrl(payload.captchaUrl),
         error: "",
       });
     } catch (error) {
@@ -821,6 +821,11 @@ function hasValidCoordinates(coordinates: Coordinates) {
     coordinates.lng >= -180 &&
     coordinates.lng <= 180
   );
+}
+
+function cacheBustUrl(url: string) {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${Date.now()}`;
 }
 
 function formatDateForText(date: Date) {

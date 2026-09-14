@@ -44,6 +44,9 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /formData\.set\("Latitude", coords\.lat\.toFixed\(6\)\)/);
   assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);
   assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
+  assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
+  assert.match(app, /const separator = url\.includes\("\?"\) \? "&" : "\?"/);
+  assert.doesNotMatch(app, /captchaUrl\}&v=/);
   assert.match(app, /請先填寫道路狀況描述。/);
   assert.match(app, /請先填寫聯絡電話。/);
   assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
