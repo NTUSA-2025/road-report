@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -39,17 +39,25 @@ test("server-renders the road report app shell", async () => {
 });
 
 test("keeps starter preview removed", async () => {
-  const [page, layout, packageJson, css] = await Promise.all([
+  const [page, app, layout, packageJson, css, favicon] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
+  assert.match(app, /from "lucide-react"/);
   assert.doesNotMatch(layout, /Starter Project|next\/font\/google/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(packageJson, /"lucide-react"/);
   assert.match(css, /height:\s*var\(--app-height,\s*100dvh\)/);
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
+  assert.match(favicon, /stroke="#17624f"/);
+  await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
+  await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
+  await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
 });

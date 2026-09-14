@@ -149,8 +149,14 @@ button:disabled {
   font-weight: 900;
 }
 
+.step-tab svg {
+  grid-area: 1 / 1;
+  color: var(--success);
+}
+
 .step-tab span {
   display: grid;
+  grid-area: 1 / 1;
   width: 22px;
   height: 22px;
   place-items: center;
@@ -328,6 +334,16 @@ button:disabled {
   letter-spacing: 0;
   box-shadow: 0 18px 34px rgba(73, 51, 10, 0.28);
   transform: translateX(-50%);
+}
+
+.camera-button,
+.soft-button,
+.back-button,
+.submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .photo-meta {
@@ -632,7 +648,6 @@ button:disabled {
 
 .back-button,
 .submit-button {
-  display: block;
   min-height: 58px;
   border-radius: 8px;
   padding: 0 18px;

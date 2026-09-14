@@ -1,6 +1,15 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import {
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  Check,
+  LocateFixed,
+  RefreshCw,
+  Send,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type RepairItem = {
@@ -373,7 +382,11 @@ export function RoadReportApp() {
               onClick={() => goToStep(index)}
               type="button"
             >
-              <span>{index + 1}</span>
+              {currentStep > index ? (
+                <Check aria-hidden="true" size={15} strokeWidth={3} />
+              ) : (
+                <span>{index + 1}</span>
+              )}
               {step.title}
             </button>
           ))}
@@ -421,6 +434,7 @@ export function RoadReportApp() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                 >
+                  <Camera aria-hidden="true" size={22} strokeWidth={2.6} />
                   {photo ? "重拍或換照片" : "拍照"}
                 </button>
 
@@ -497,6 +511,7 @@ export function RoadReportApp() {
 
                 <div className="location-actions">
                   <button className="soft-button" type="button" onClick={handleLocate}>
+                    <LocateFixed aria-hidden="true" size={18} strokeWidth={2.4} />
                     用手機定位
                   </button>
                   <div className="coord-chip">{coordinateLabel}</div>
@@ -602,6 +617,7 @@ export function RoadReportApp() {
                     )}
                   </div>
                   <button className="soft-button" type="button" onClick={refreshCaptcha}>
+                    <RefreshCw aria-hidden="true" size={18} strokeWidth={2.4} />
                     換一張
                   </button>
                   <input
@@ -638,6 +654,7 @@ export function RoadReportApp() {
               onClick={goBack}
               type="button"
             >
+              <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.5} />
               上一步
             </button>
             {isLastStep ? (
@@ -646,6 +663,7 @@ export function RoadReportApp() {
                 disabled={submitState === "submitting" || captcha.loading}
                 type="submit"
               >
+                <Send aria-hidden="true" size={18} strokeWidth={2.5} />
                 {submitState === "submitting" ? "送出中..." : "送出報修"}
               </button>
             ) : (
@@ -654,6 +672,7 @@ export function RoadReportApp() {
                 onClick={goNext}
                 type="button"
               >
+                <ArrowRight aria-hidden="true" size={18} strokeWidth={2.5} />
                 下一步
               </button>
             )}
