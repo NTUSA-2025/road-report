@@ -118,6 +118,7 @@ export function RoadReportApp() {
   });
   const [description, setDescription] = useState("");
   const [itemId, setItemId] = useState("5");
+  const [takenDateValue, setTakenDateValue] = useState(formatDateInputValue(new Date()));
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -204,7 +205,7 @@ export function RoadReportApp() {
     };
   }, [photoUrl]);
 
-  const takenDate = photoMeta.takenAt ?? new Date();
+  const takenDate = parseDateInputValue(takenDateValue) ?? photoMeta.takenAt ?? new Date();
   const completionCount = [
     photo,
     description.trim(),
@@ -267,10 +268,7 @@ export function RoadReportApp() {
     setPhotoMeta(meta);
 
     const nextTakenAt = meta.takenAt ?? new Date(file.lastModified);
-    setMoreInfo((current) => {
-      const stamp = formatDateForText(nextTakenAt);
-      return current || `照片拍攝/選取時間：${stamp}`;
-    });
+    setTakenDateValue(formatDateInputValue(nextTakenAt));
 
     if (meta.coordinates) {
       updateCoords({ ...meta.coordinates, source: "photo" });
@@ -588,6 +586,15 @@ export function RoadReportApp() {
                     required
                     rows={4}
                     value={description}
+                  />
+                </label>
+
+                <label className="field-label">
+                  拍攝日期
+                  <input
+                    onChange={(event) => setTakenDateValue(event.target.value)}
+                    type="date"
+                    value={takenDateValue}
                   />
                 </label>
 
@@ -1053,12 +1060,20 @@ function cacheBustUrl(url: string) {
   return `${url}${separator}v=${Date.now()}`;
 }
 
-function formatDateForText(date: Date) {
-  return new Intl.DateTimeFormat("zh-TW", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
+function formatDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInputValue(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
 async function readPhotoMeta(file: File): Promise<PhotoMeta> {
