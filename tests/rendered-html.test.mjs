@@ -43,6 +43,9 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /formatCoordinateValue\(coords\)/);
   assert.match(app, /formData\.set\("Latitude", coords\.lat\.toFixed\(6\)\)/);
   assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);
+  assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
+  assert.match(app, /請先填寫道路狀況描述。/);
+  assert.match(app, /請先填寫聯絡電話。/);
   assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
   assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton|vinext|eslint-config-next|next"/);

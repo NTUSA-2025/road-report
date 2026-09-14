@@ -279,7 +279,7 @@ export function RoadReportApp() {
     const missing = firstMissingStep();
     if (missing != null) {
       setSubmitState("error");
-      setSubmitMessage(`請先完成「${STEPS[missing].title}」再送出。`);
+      setSubmitMessage(validateRequiredFields(missing) ?? `請先完成「${STEPS[missing].title}」再送出。`);
       setCurrentStep(missing);
       return;
     }
@@ -340,6 +340,14 @@ export function RoadReportApp() {
   }
 
   function goNext() {
+    const error = validateRequiredFields(currentStep);
+
+    if (error) {
+      setSubmitState("error");
+      setSubmitMessage(error);
+      return;
+    }
+
     goToStep(currentStep + 1);
   }
 
@@ -348,12 +356,43 @@ export function RoadReportApp() {
   }
 
   function firstMissingStep() {
-    if (!photo) return 0;
-    if (!description.trim()) return 1;
-    if (!hasValidCoordinates(coords)) return 2;
-    if (!phone.trim()) return 3;
-    if (captchaAnswer.trim().length !== 5) return 4;
+    for (let step = 0; step < STEPS.length; step += 1) {
+      if (validateRequiredFields(step)) {
+        return step;
+      }
+    }
+
     return null;
+  }
+
+  function validateRequiredFields(step: number) {
+    if (step === 0 && !photo) {
+      return "請先拍照或上傳照片。";
+    }
+
+    if (step === 1) {
+      if (!itemId.trim()) {
+        return "請先選擇申報項目。";
+      }
+
+      if (!description.trim()) {
+        return "請先填寫道路狀況描述。";
+      }
+    }
+
+    if (step === 2 && !hasValidCoordinates(coords)) {
+      return "請先確認有效的經緯度位置。";
+    }
+
+    if (step === 3 && !phone.trim()) {
+      return "請先填寫聯絡電話。";
+    }
+
+    if (step === 4 && captchaAnswer.trim().length !== 5) {
+      return "請輸入 5 碼驗證碼。";
+    }
+
+    return "";
   }
 
   return (
