@@ -22,6 +22,7 @@ npm run build
 
 Cloudflare Pages 設定：
 
+- Project name: `road-report`
 - Build command: `npm run build`
 - Build output directory: `dist/client`
 - Wrangler config: `wrangler.toml`

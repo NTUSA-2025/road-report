@@ -65,6 +65,7 @@ test("keeps starter preview removed", async () => {
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
   assert.match(favicon, /stroke="#17624f"/);
+  assert.match(wrangler, /name = "road-report"/);
   assert.match(wrangler, /pages_build_output_dir = "\.\/dist\/client"/);
   assert.match(wrangler, /compatibility_date = "2026-09-14"/);
   assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
