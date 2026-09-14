@@ -330,34 +330,10 @@ button:disabled {
   line-height: 1.65;
 }
 
-.stage-topbar {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.stage-topbar span {
-  min-width: 0;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 999px;
-  padding: 8px 11px;
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--brand-dark);
-  font-size: 0.82rem;
-  font-weight: 900;
-  box-shadow: 0 8px 20px rgba(24, 34, 29, 0.08);
-}
-
 .camera-button {
   position: absolute;
   left: 50%;
-  bottom: 104px;
+  bottom: 68px;
   z-index: 3;
   width: min(78%, 340px);
   min-height: 68px;
@@ -376,7 +352,7 @@ button:disabled {
 .upload-photo-button {
   position: absolute;
   left: 50%;
-  bottom: 58px;
+  bottom: 24px;
   z-index: 3;
   min-height: 38px;
   border: 1px solid rgba(15, 63, 52, 0.12);
@@ -402,18 +378,6 @@ button:disabled {
   gap: 8px;
 }
 
-.photo-meta {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.photo-meta div,
 .coord-chip {
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -421,25 +385,6 @@ button:disabled {
   padding: 10px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 10px 24px rgba(24, 34, 29, 0.08);
-}
-
-.photo-meta span,
-.photo-meta strong {
-  display: block;
-  overflow-wrap: anywhere;
-}
-
-.photo-meta span {
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 800;
-}
-
-.photo-meta strong {
-  margin-top: 3px;
-  color: var(--foreground);
-  font-size: 0.86rem;
-  line-height: 1.28;
 }
 
 .app-card {
@@ -1033,16 +978,15 @@ button:disabled {
   }
 
   .camera-button {
-    bottom: 92px;
+    bottom: 58px;
     min-height: 58px;
   }
 
   .upload-photo-button {
-    bottom: 52px;
+    bottom: 20px;
     min-height: 34px;
   }
 
-  .photo-meta div,
   .coord-chip {
     padding: 8px;
   }

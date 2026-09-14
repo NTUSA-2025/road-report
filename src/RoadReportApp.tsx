@@ -530,14 +530,9 @@ export function RoadReportApp() {
                   ) : (
                     <div className="empty-photo">
                       <strong>先拍一張現場照片</strong>
-                      <span>會自動讀取拍攝日期，若照片包含 GPS 也會更新地圖位置。</span>
+                      <span>照片會隨報修一起送出，下一步再補充狀況與位置。</span>
                     </div>
                   )}
-                </div>
-
-                <div className="stage-topbar">
-                  <span>{photo ? "照片已就緒" : "需要照片"}</span>
-                  <span>{formatDateForText(takenDate)}</span>
                 </div>
 
                 <button
@@ -557,17 +552,6 @@ export function RoadReportApp() {
                   <Upload aria-hidden="true" size={18} strokeWidth={2.5} />
                   上傳照片
                 </button>
-
-                <div className="photo-meta">
-                  <div>
-                    <span>拍攝日期</span>
-                    <strong>{formatDateForText(takenDate)}</strong>
-                  </div>
-                  <div>
-                    <span>位置資訊</span>
-                    <strong>{photoMeta.coordinates ? "照片已帶入" : "下一步確認"}</strong>
-                  </div>
-                </div>
               </section>
             ) : null}
 
