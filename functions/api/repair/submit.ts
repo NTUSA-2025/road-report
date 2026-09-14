@@ -10,7 +10,8 @@ import type { PagesContext } from "../../_lib/types";
 
 const REQUIRED_FIELDS = [
   "ApplicantPhone",
-  "Location",
+  "Latitude",
+  "Longitude",
   "BrokenItemId",
   "Reason",
   "CapAns",
@@ -30,9 +31,9 @@ export async function onRequestPost({ request }: PagesContext) {
   const missing = REQUIRED_FIELDS.find((field) => !`${incoming.get(field) ?? ""}`.trim());
   const image = incoming.get("ImageFiles");
 
-  if (missing || !(image instanceof File) || image.size === 0) {
+  if (missing || !coordinatesValue(incoming) || !(image instanceof File) || image.size === 0) {
     return jsonResponse(
-      { error: "請確認必填欄位、照片與驗證碼都已填寫。" },
+      { error: "請確認必填欄位、經緯度、照片與驗證碼都已填寫。" },
       { status: 400 },
     );
   }
@@ -42,7 +43,7 @@ export async function onRequestPost({ request }: PagesContext) {
   upstream.set("ApplicantName", textValue(incoming, "ApplicantName"));
   upstream.set("ApplicantPhone", textValue(incoming, "ApplicantPhone"));
   upstream.set("ApplicantEmail", textValue(incoming, "ApplicantEmail"));
-  upstream.set("Location", withCoordinates(incoming));
+  upstream.set("Location", coordinatesValue(incoming) ?? "");
   upstream.set("BrokenItemId", textValue(incoming, "BrokenItemId"));
   upstream.set("Reason", textValue(incoming, "Reason"));
   upstream.set("ImageFiles", image, image.name);
@@ -115,16 +116,24 @@ function textValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function withCoordinates(formData: FormData) {
-  const location = textValue(formData, "Location");
+function coordinatesValue(formData: FormData) {
   const lat = textValue(formData, "Latitude");
   const lng = textValue(formData, "Longitude");
+  const latitude = Number(lat);
+  const longitude = Number(lng);
 
-  if (!lat || !lng || location.includes(lat)) {
-    return location;
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return null;
   }
 
-  return `${location}；座標 ${lat}, ${lng}`;
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 }
 
 function extractValidationError(html: string) {

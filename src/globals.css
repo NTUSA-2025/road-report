@@ -549,6 +549,28 @@ button:disabled {
   font-weight: 900;
 }
 
+.coordinate-panel {
+  display: grid;
+  gap: 5px;
+  min-height: 58px;
+  border: 1px solid #cbd8d1;
+  border-radius: 8px;
+  padding: 10px 13px;
+  background: #ffffff;
+  color: var(--brand-dark);
+}
+
+.coordinate-panel span {
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.coordinate-panel strong {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
 .map-canvas {
   position: relative;
   overflow: hidden;

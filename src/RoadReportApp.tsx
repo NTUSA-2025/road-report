@@ -72,7 +72,6 @@ export function RoadReportApp() {
     takenAt: null,
     coordinates: null,
   });
-  const [location, setLocation] = useState(formatLocation(DEFAULT_COORDS));
   const [description, setDescription] = useState("");
   const [itemId, setItemId] = useState("5");
   const [name, setName] = useState("");
@@ -166,7 +165,7 @@ export function RoadReportApp() {
     photo,
     description.trim(),
     phone.trim(),
-    location.trim(),
+    hasValidCoordinates(coords),
     captchaAnswer.trim().length === 5,
   ].filter(Boolean).length;
   const selectedItemLabel =
@@ -179,11 +178,8 @@ export function RoadReportApp() {
     window.scrollTo(0, 0);
   }, [currentStep]);
 
-  function updateCoords(next: Coordinates, updateLocation = true) {
+  function updateCoords(next: Coordinates) {
     setCoords(next);
-    if (updateLocation) {
-      setLocation(formatLocation(next));
-    }
   }
 
   function handleLocate() {
@@ -302,7 +298,7 @@ export function RoadReportApp() {
     formData.set("ApplicantName", name);
     formData.set("ApplicantPhone", phone);
     formData.set("ApplicantEmail", email);
-    formData.set("Location", location);
+    formData.set("Location", formatCoordinateValue(coords));
     formData.set("BrokenItemId", itemId);
     formData.set("Reason", description);
     formData.set("ImageDescription", moreInfo);
@@ -310,8 +306,8 @@ export function RoadReportApp() {
     formData.set("ImageTakenYear", `${takenDate.getFullYear()}`);
     formData.set("ImageTakenMonth", `${takenDate.getMonth() + 1}`);
     formData.set("ImageTakenDay", `${takenDate.getDate()}`);
-    formData.set("Latitude", `${coords.lat}`);
-    formData.set("Longitude", `${coords.lng}`);
+    formData.set("Latitude", coords.lat.toFixed(6));
+    formData.set("Longitude", coords.lng.toFixed(6));
     formData.set("ImageFiles", photo, photo.name);
 
     try {
@@ -354,7 +350,7 @@ export function RoadReportApp() {
   function firstMissingStep() {
     if (!photo) return 0;
     if (!description.trim()) return 1;
-    if (!location.trim()) return 2;
+    if (!hasValidCoordinates(coords)) return 2;
     if (!phone.trim()) return 3;
     if (captchaAnswer.trim().length !== 5) return 4;
     return null;
@@ -538,15 +534,10 @@ export function RoadReportApp() {
 
                 <LowInterferenceMap coords={coords} onChange={handleMapChange} />
 
-                <label className="field-label">
-                  報修地點
-                  <input
-                    onChange={(event) => setLocation(event.target.value)}
-                    required
-                    type="text"
-                    value={location}
-                  />
-                </label>
+                <div className="coordinate-panel">
+                  <span>送出座標</span>
+                  <strong>{formatCoordinateValue(coords)}</strong>
+                </div>
               </section>
             ) : null}
 
@@ -778,8 +769,19 @@ function LowInterferenceMap({
   );
 }
 
-function formatLocation(coordinates: Coordinates) {
-  return `臺大校園道路；座標 ${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
+function formatCoordinateValue(coordinates: Coordinates) {
+  return `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
+}
+
+function hasValidCoordinates(coordinates: Coordinates) {
+  return (
+    Number.isFinite(coordinates.lat) &&
+    Number.isFinite(coordinates.lng) &&
+    coordinates.lat >= -90 &&
+    coordinates.lat <= 90 &&
+    coordinates.lng >= -180 &&
+    coordinates.lng <= 180
+  );
 }
 
 function formatDateForText(date: Date) {

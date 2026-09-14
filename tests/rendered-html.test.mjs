@@ -12,7 +12,7 @@ test("builds the road report app shell", async () => {
 });
 
 test("uses native Cloudflare Pages structure", async () => {
-  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, tile] = await Promise.all([
+  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, submit, tile] = await Promise.all([
     readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
@@ -23,6 +23,7 @@ test("uses native Cloudflare Pages structure", async () => {
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../functions/_lib/ntu.ts", import.meta.url), "utf8"),
+    readFile(new URL("../functions/api/repair/submit.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/map/tiles/[style]/[z]/[x]/[tile].ts", import.meta.url), "utf8"),
   ]);
 
@@ -38,6 +39,10 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /上傳照片/);
   assert.doesNotMatch(app, /照片座標/);
   assert.doesNotMatch(app, /<strong>\{coordinateLabel\}<\/strong>/);
+  assert.doesNotMatch(app, /setLocation|formatLocation|報修地點/);
+  assert.match(app, /formatCoordinateValue\(coords\)/);
+  assert.match(app, /formData\.set\("Latitude", coords\.lat\.toFixed\(6\)\)/);
+  assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);
   assert.doesNotMatch(app, /basemaps\.cartocdn\.com\/light_all/);
   assert.doesNotMatch(app, /tile\.openstreetmap\.org|tile-grid|buildTiles/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton|vinext|eslint-config-next|next"/);
@@ -59,6 +64,10 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(viteConfig, /@vitejs\/plugin-react/);
   assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
   assert.match(ntu, /fetchCreateSession/);
+  assert.match(submit, /"Latitude"/);
+  assert.match(submit, /"Longitude"/);
+  assert.match(submit, /upstream\.set\("Location", coordinatesValue\(incoming\)/);
+  assert.doesNotMatch(submit, /withCoordinates|textValue\(incoming, "Location"\)/);
   assert.match(tile, /CARTO_API_KEY\?: string/);
   assert.match(tile, /api_key/);
   assert.match(tile, /x-road-report-config/);

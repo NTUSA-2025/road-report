@@ -15,6 +15,7 @@
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
 - Captcha 以 proxy 圖片呈現在本站，使用者手動輸入後送出
+- 位置送出強制使用 `Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期、相片說明與 `CapAns`
 
 ## 開發

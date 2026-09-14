@@ -20,7 +20,7 @@
 | `ApplicantName` | 聯絡步驟姓名欄位 | 否 | 申請人姓名，可留空。 |
 | `ApplicantPhone` | 聯絡步驟電話欄位 | 是 | NTU 表單必填電話。 |
 | `ApplicantEmail` | 聯絡步驟 email 欄位 | 否 | 申請人 email，可留空。 |
-| `Location` | 位置步驟地點文字 | 是 | 預設由地圖座標產生，使用者可手動修改。 |
+| `Location` | 位置步驟經緯度 | 否 | 前端仍可送此欄位相容舊流程，但本站後端不信任此值；實際送往 NTU 的 `Location` 一律由 `Latitude`、`Longitude` 產生。 |
 | `BrokenItemId` | 現況步驟報修類型 | 是 | 選項來自 NTU 表單 `BrokenItemId`；連線失敗時使用本站 fallback 選項。 |
 | `Reason` | 現況步驟問題描述 | 是 | 回報原因與道路狀況描述。 |
 | `ImageDescription` | 現況步驟照片補充說明 | 否 | 補充照片角度、附近地標等資訊。 |
@@ -28,8 +28,8 @@
 | `ImageTakenYear` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝年份。 |
 | `ImageTakenMonth` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝月份，1 到 12。 |
 | `ImageTakenDay` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝日期。 |
-| `Latitude` | 地圖、裝置定位或照片 EXIF GPS | 否 | 本站輔助欄位，不直接送成 NTU 獨立欄位。 |
-| `Longitude` | 地圖、裝置定位或照片 EXIF GPS | 否 | 本站輔助欄位，不直接送成 NTU 獨立欄位。 |
+| `Latitude` | 地圖、裝置定位或照片 EXIF GPS | 是 | 本站位置必填欄位；送出前會檢查必須是 `-90` 到 `90` 之間的有效緯度。 |
+| `Longitude` | 地圖、裝置定位或照片 EXIF GPS | 是 | 本站位置必填欄位；送出前會檢查必須是 `-180` 到 `180` 之間的有效經度。 |
 | `ImageFiles` | 拍照或上傳照片 | 是 | 實際照片檔案。 |
 
 ## 本站 API 到 NTU 表單
@@ -42,7 +42,7 @@
 | `ApplicantName` | 前端 `ApplicantName` | `textValue()` trim 後送出，可空白。 |
 | `ApplicantPhone` | 前端 `ApplicantPhone` | `textValue()` trim 後送出；本站送出前檢查必填。 |
 | `ApplicantEmail` | 前端 `ApplicantEmail` | `textValue()` trim 後送出，可空白。 |
-| `Location` | 前端 `Location`、`Latitude`、`Longitude` | 由 `withCoordinates()` 組合。若有經緯度且 `Location` 尚未包含緯度字串，會附加 `；座標 {lat}, {lng}`。 |
+| `Location` | 前端 `Latitude`、`Longitude` | 由 `coordinatesValue()` 驗證後格式化為 `{lat}, {lng}`，固定使用六位小數；不採用前端文字地點。 |
 | `BrokenItemId` | 前端 `BrokenItemId` | 對應 NTU `BrokenItemId` select option value；本站送出前檢查必填。 |
 | `Reason` | 前端 `Reason` | `textValue()` trim 後送出；本站送出前檢查必填。 |
 | `ImageFiles` | 前端 `ImageFiles` | 以原檔案與原檔名送出。 |
@@ -57,8 +57,8 @@
 
 | 本站欄位 | 用途 |
 | --- | --- |
-| `Latitude` | 僅用來附加到 NTU `Location` 文字，不作為獨立 NTU 欄位。 |
-| `Longitude` | 僅用來附加到 NTU `Location` 文字，不作為獨立 NTU 欄位。 |
+| `Latitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
+| `Longitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
 | `photoMeta.coordinates` | 前端狀態，用於從照片 EXIF 更新地圖位置。 |
 | `captchaUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，用於顯示本站 captcha proxy 圖片。 |
 
@@ -76,7 +76,8 @@
 本站在轉送到 NTU 前會檢查：
 
 - `ApplicantPhone`
-- `Location`
+- `Latitude`
+- `Longitude`
 - `BrokenItemId`
 - `Reason`
 - `CapAns`
