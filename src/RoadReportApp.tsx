@@ -58,8 +58,10 @@ const DEFAULT_COORDS: Coordinates = {
 const MAP_TILE_URL_TEMPLATE = "/api/map/tiles/light_all/{z}/{x}/{y}.png";
 const MAP_TILE_DIAGNOSTIC_HEADERS = [
   "content-type",
+  "content-length",
   "x-road-report-config",
   "x-road-report-upstream-host",
+  "x-road-report-upstream-path",
   "x-road-report-upstream-status",
   "x-road-report-upstream-style",
 ];
@@ -995,11 +997,23 @@ function attachMapTileDiagnostics(tileLayer: LeafletTileLayer, context: MapTileD
     }
 
     reportedMapTileDiagnostics.add(loadedKey);
+    const diagnosticUrl = mapTileUrlFromEvent(tileEvent);
+
     console.info("[RoadReport map] First tile loaded", {
       context,
       coords: tileEvent.coords ?? null,
-      tileUrl: tileEvent.tile?.currentSrc || tileEvent.tile?.src || null,
+      tileUrl: diagnosticUrl,
     });
+
+    if (diagnosticUrl) {
+      void logMapTileDiagnostics({
+        context,
+        coords: tileEvent.coords ?? null,
+        eventError: null,
+        reason: "first-tile-loaded",
+        tileUrl: diagnosticUrl,
+      });
+    }
   });
 
   tileLayer.on("tileerror", (event: unknown) => {
@@ -1026,6 +1040,7 @@ function attachMapTileDiagnostics(tileLayer: LeafletTileLayer, context: MapTileD
       context,
       coords: tileEvent.coords ?? null,
       eventError: describeMapTileError(tileEvent.error),
+      reason: "tile-load-error",
       tileUrl: diagnosticUrl,
     });
   });
@@ -1049,11 +1064,13 @@ async function logMapTileDiagnostics({
   context,
   coords,
   eventError,
+  reason,
   tileUrl,
 }: {
   context: MapTileDiagnosticContext;
   coords: MapTileErrorEvent["coords"] | null;
   eventError: unknown;
+  reason: "first-tile-loaded" | "tile-load-error";
   tileUrl: string;
 }) {
   const startedAt = performance.now();
@@ -1069,15 +1086,17 @@ async function logMapTileDiagnostics({
       },
     });
     const contentType = response.headers.get("content-type") ?? "";
-    const responseBodyPreview = await readMapDiagnosticBodyPreview(response, contentType);
+    const responseBodyDiagnostic = await readMapDiagnosticBody(response, contentType);
     const diagnosticHeaders = Object.fromEntries(
       MAP_TILE_DIAGNOSTIC_HEADERS.map((header) => [header, response.headers.get(header)]),
     );
-    const diagnosis = diagnoseMapTileResponse(response.status, diagnosticHeaders, responseBodyPreview);
+    const allResponseHeaders = Object.fromEntries(response.headers.entries());
+    const diagnosis = diagnoseMapTileResponse(response.status, diagnosticHeaders, responseBodyDiagnostic);
 
     console.groupCollapsed(`[RoadReport map] Tile diagnostic: ${diagnosis}`);
     console.table({
       context,
+      reason,
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
@@ -1091,9 +1110,10 @@ async function logMapTileDiagnostics({
       eventError,
     });
     console.log("Proxy diagnostics", diagnosticHeaders);
+    console.log("All response headers", allResponseHeaders);
 
-    if (responseBodyPreview) {
-      console.log("Response body preview", responseBodyPreview);
+    if (responseBodyDiagnostic) {
+      console.log("Response body diagnostic", responseBodyDiagnostic);
     }
 
     console.groupEnd();
@@ -1108,27 +1128,44 @@ async function logMapTileDiagnostics({
   }
 }
 
-async function readMapDiagnosticBodyPreview(response: Response, contentType: string) {
-  if (response.ok && !contentType.includes("json") && !contentType.startsWith("text/")) {
-    return null;
+async function readMapDiagnosticBody(response: Response, contentType: string) {
+  if (contentType.includes("json") || contentType.startsWith("text/") || !response.ok) {
+    const body = await response.clone().text();
+
+    if (!body) {
+      return null;
+    }
+
+    return {
+      kind: "text" as const,
+      preview: body.length > 800 ? `${body.slice(0, 800)}...` : body,
+    };
   }
 
-  const body = await response.clone().text();
+  if (contentType.startsWith("image/")) {
+    const blob = await response.clone().blob();
 
-  if (!body) {
-    return null;
+    return {
+      kind: "image" as const,
+      bytes: blob.size,
+      type: blob.type || contentType,
+      note: "The browser loaded an image tile. If the map still shows API KEY REQUIRED, CARTO returned error artwork with an HTTP success response.",
+    };
   }
 
-  return body.length > 800 ? `${body.slice(0, 800)}...` : body;
+  return null;
 }
 
 function diagnoseMapTileResponse(
   status: number,
   headers: Record<string, string | null>,
-  responseBodyPreview: string | null,
+  responseBodyDiagnostic: Awaited<ReturnType<typeof readMapDiagnosticBody>>,
 ) {
   const config = headers["x-road-report-config"];
-  const body = responseBodyPreview?.toLowerCase() ?? "";
+  const body =
+    responseBodyDiagnostic?.kind === "text"
+      ? responseBodyDiagnostic.preview.toLowerCase()
+      : "";
 
   if (config === "missing-carto-api-key") {
     return "CARTO_API_KEY was not read by the Pages Function";
@@ -1148,6 +1185,10 @@ function diagnoseMapTileResponse(
 
   if (status >= 400) {
     return "the tile proxy or CARTO upstream returned a client error";
+  }
+
+  if (config === "carto-api-key-present" && responseBodyDiagnostic?.kind === "image") {
+    return "CARTO_API_KEY was read and CARTO returned an image; visible API KEY REQUIRED text likely means the key is invalid or not authorized";
   }
 
   return "diagnostic fetch succeeded; inspect the original tile event and browser network panel";

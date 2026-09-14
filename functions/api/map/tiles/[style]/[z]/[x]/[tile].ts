@@ -35,8 +35,8 @@ export async function onRequestGet({
   const y = tile.replace(/\.png$/, "");
   const subdomains = ["a", "b", "c", "d"];
   const subdomain = subdomains[Number(x) % subdomains.length];
-  const tileUrl = new URL(`/${style}/${z}/${x}/${y}.png`, `https://${subdomain}.basemaps.cartocdn.com`);
-  tileUrl.searchParams.set("api_key", env.CARTO_API_KEY);
+  const tileUrl = new URL(`/rastertiles/${style}/${z}/${x}/${y}.png`, `https://${subdomain}.basemaps.cartocdn.com`);
+  tileUrl.searchParams.set("key", env.CARTO_API_KEY);
 
   let upstream: Response;
 
@@ -55,6 +55,7 @@ export async function onRequestGet({
       {
         status: 502,
         headers: diagnosticHeaders({
+          path: tileUrl.pathname,
           style,
           status: "fetch-error",
           upstreamHost: tileUrl.host,
@@ -67,6 +68,7 @@ export async function onRequestGet({
 
   headers.set("cache-control", upstream.ok ? "public, max-age=86400, stale-while-revalidate=604800" : "no-store");
   setDiagnosticHeaders(headers, {
+    path: tileUrl.pathname,
     style,
     status: String(upstream.status),
     upstreamHost: tileUrl.host,
@@ -82,16 +84,19 @@ export async function onRequestGet({
 
 function diagnosticHeaders({
   status,
+  path,
   style,
   upstreamHost,
 }: {
   status: string;
+  path: string;
   style: string;
   upstreamHost: string;
 }) {
   const headers = new Headers();
 
   setDiagnosticHeaders(headers, {
+    path,
     status,
     style,
     upstreamHost,
@@ -104,16 +109,19 @@ function setDiagnosticHeaders(
   headers: Headers,
   {
     status,
+    path,
     style,
     upstreamHost,
   }: {
     status: string;
+    path: string;
     style: string;
     upstreamHost: string;
   },
 ) {
   headers.set("x-road-report-config", "carto-api-key-present");
   headers.set("x-road-report-upstream-host", upstreamHost);
+  headers.set("x-road-report-upstream-path", path);
   headers.set("x-road-report-upstream-status", status);
   headers.set("x-road-report-upstream-style", style);
 }

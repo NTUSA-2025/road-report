@@ -32,6 +32,8 @@ npm run build
 CARTO_API_KEY=your-carto-api-key
 ```
 
+這裡使用的是 CARTO Basemaps API key；本站 tile proxy 會依 CARTO Basemaps 新規格把它轉送為 `key` query parameter。
+
 ## Cloudflare Pages
 
 Cloudflare Pages 設定：

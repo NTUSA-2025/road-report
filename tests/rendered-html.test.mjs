@@ -105,7 +105,8 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(submit, /upstream\.set\("Location", coordinatesValue\(incoming\)/);
   assert.doesNotMatch(submit, /withCoordinates|textValue\(incoming, "Location"\)/);
   assert.match(tile, /CARTO_API_KEY\?: string/);
-  assert.match(tile, /api_key/);
+  assert.match(tile, /\/rastertiles\/\$\{style\}\/\$\{z\}\/\$\{x\}\/\$\{y\}\.png/);
+  assert.match(tile, /searchParams\.set\("key", env\.CARTO_API_KEY\)/);
   assert.match(tile, /x-road-report-config/);
   assert.equal(envExample.trim(), "CARTO_API_KEY=\nREPAIR_SUBMIT_ENABLED=false");
   await assert.rejects(access(new URL("../app/page.tsx", import.meta.url)));
