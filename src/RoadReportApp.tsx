@@ -66,6 +66,7 @@ const MAP_TILE_DIAGNOSTIC_HEADERS = [
   "x-road-report-upstream-style",
 ];
 const reportedMapTileDiagnostics = new Set<string>();
+const DEBUG_OUTPUT_ENABLED = isEnabledFlag(import.meta.env.VITE_DEBUG_OUTPUT);
 
 const FALLBACK_ITEMS: RepairItem[] = [
   { value: "1", label: "路燈 street light" },
@@ -977,9 +978,15 @@ function createMapTileLayer(L: LeafletModule, context: MapTileDiagnosticContext)
     attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
   });
 
-  attachMapTileDiagnostics(tileLayer, context);
+  if (DEBUG_OUTPUT_ENABLED) {
+    attachMapTileDiagnostics(tileLayer, context);
+  }
 
   return tileLayer;
+}
+
+function isEnabledFlag(value: unknown) {
+  return ["1", "true", "yes", "on"].includes(`${value ?? ""}`.trim().toLowerCase());
 }
 
 function attachMapTileDiagnostics(tileLayer: LeafletTileLayer, context: MapTileDiagnosticContext) {

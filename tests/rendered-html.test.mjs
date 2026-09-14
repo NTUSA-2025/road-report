@@ -12,7 +12,7 @@ test("builds the road report app shell", async () => {
 });
 
 test("uses native Cloudflare Pages structure", async () => {
-  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, ntu, flags, session, refresh, submit, tile] = await Promise.all([
+  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, viteEnv, ntu, flags, session, refresh, submit, tile] = await Promise.all([
     readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
@@ -22,6 +22,7 @@ test("uses native Cloudflare Pages structure", async () => {
     readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
+    readFile(new URL("../src/vite-env.d.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/_lib/ntu.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/_lib/feature-flags.ts", import.meta.url), "utf8"),
     readFile(new URL("../functions/api/repair/session.ts", import.meta.url), "utf8"),
@@ -42,6 +43,8 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /總覽/);
   assert.match(app, /Upload/);
   assert.match(app, /await import\("leaflet"\)/);
+  assert.match(app, /const DEBUG_OUTPUT_ENABLED = isEnabledFlag\(import\.meta\.env\.VITE_DEBUG_OUTPUT\)/);
+  assert.match(app, /if \(DEBUG_OUTPUT_ENABLED\)/);
   assert.match(app, /\/api\/map\/tiles\/light_all\/\{z\}\/\{x\}\/\{y\}\.png/);
   assert.match(app, /name="camera-photo"/);
   assert.match(app, /capture="environment"/);
@@ -108,7 +111,8 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(tile, /\/rastertiles\/\$\{style\}\/\$\{z\}\/\$\{x\}\/\$\{y\}\.png/);
   assert.match(tile, /searchParams\.set\("key", env\.CARTO_API_KEY\)/);
   assert.match(tile, /x-road-report-config/);
-  assert.equal(envExample.trim(), "CARTO_API_KEY=\nREPAIR_SUBMIT_ENABLED=false");
+  assert.match(viteEnv, /VITE_DEBUG_OUTPUT\?: string/);
+  assert.equal(envExample.trim(), "CARTO_API_KEY=\nREPAIR_SUBMIT_ENABLED=false\nVITE_DEBUG_OUTPUT=false");
   await assert.rejects(access(new URL("../app/page.tsx", import.meta.url)));
   await assert.rejects(access(new URL("../worker/index.ts", import.meta.url)));
   await assert.rejects(access(new URL("../scripts/prepare-pages-output.mjs", import.meta.url)));
