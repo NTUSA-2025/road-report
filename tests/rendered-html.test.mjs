@@ -50,11 +50,14 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.doesNotMatch(app, /stage-topbar|photo-meta|需要照片|位置資訊/);
   assert.match(app, /拍攝日期/);
   assert.match(app, /type="date"/);
+  assert.match(app, /位置補充/);
+  assert.match(app, /setLocationNote/);
+  assert.doesNotMatch(app, /相片補充|setMoreInfo|moreInfo/);
   assert.match(app, /setTakenDateValue\(formatDateInputValue\(nextTakenAt\)\)/);
   assert.match(app, /parseDateInputValue\(takenDateValue\)/);
   assert.doesNotMatch(app, /照片拍攝\/選取時間/);
   assert.doesNotMatch(app, /<strong>\{coordinateLabel\}<\/strong>/);
-  assert.doesNotMatch(app, /setLocation|formatLocation|報修地點/);
+  assert.doesNotMatch(app, /setLocation\(|formatLocation|報修地點/);
   assert.match(app, /formatCoordinateValue\(coords\)/);
   assert.match(app, /formData\.set\("Latitude", coords\.lat\.toFixed\(6\)\)/);
   assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);

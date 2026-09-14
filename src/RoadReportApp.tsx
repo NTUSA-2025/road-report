@@ -122,7 +122,7 @@ export function RoadReportApp() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [moreInfo, setMoreInfo] = useState("");
+  const [locationNote, setLocationNote] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captcha, setCaptcha] = useState<CaptchaState>({
     ready: false,
@@ -344,7 +344,7 @@ export function RoadReportApp() {
     formData.set("Location", formatCoordinateValue(coords));
     formData.set("BrokenItemId", itemId);
     formData.set("Reason", description);
-    formData.set("ImageDescription", moreInfo);
+    formData.set("ImageDescription", locationNote);
     formData.set("CapAns", captchaAnswer.trim());
     formData.set("ImageTakenYear", `${takenDate.getFullYear()}`);
     formData.set("ImageTakenMonth", `${takenDate.getMonth() + 1}`);
@@ -597,16 +597,6 @@ export function RoadReportApp() {
                     value={takenDateValue}
                   />
                 </label>
-
-                <label className="field-label">
-                  相片補充
-                  <input
-                    onChange={(event) => setMoreInfo(event.target.value)}
-                    placeholder="可補充照片角度、附近地標"
-                    type="text"
-                    value={moreInfo}
-                  />
-                </label>
               </section>
             ) : null}
 
@@ -634,6 +624,16 @@ export function RoadReportApp() {
                   <span>送出座標</span>
                   <strong>{formatCoordinateValue(coords)}</strong>
                 </div>
+
+                <label className="field-label">
+                  位置補充
+                  <input
+                    onChange={(event) => setLocationNote(event.target.value)}
+                    placeholder="可補充附近地標、路口或照片角度"
+                    type="text"
+                    value={locationNote}
+                  />
+                </label>
               </section>
             ) : null}
 
