@@ -470,6 +470,7 @@ export function RoadReportApp() {
       >
         <header className="app-header">
           <div className="brand-block">
+            <span className="brand-eyebrow" aria-hidden="true">NTU CAMPUS</span>
             <h1>道路狀況回報</h1>
             <p>{headerHint}</p>
           </div>
@@ -550,8 +551,13 @@ export function RoadReportApp() {
                     <img alt="準備送出的道路狀況照片" src={photoUrl} />
                   ) : (
                     <div className="empty-photo">
-                      <strong>先拍一張現場照片</strong>
-                      <span>照片會隨報修一起送出，下一步再補充狀況與位置。</span>
+                      <div className="capture-illustration" aria-hidden="true">
+                        <Camera size={42} strokeWidth={1.4} />
+                      </div>
+                      <div className="empty-photo-copy">
+                        <strong>先拍一張現場照片</strong>
+                        <span>照片會隨報修一起送出，下一步再補充狀況與位置。</span>
+                      </div>
                     </div>
                   )}
                 </div>
