@@ -511,8 +511,8 @@ export function RoadReportApp() {
           ))}
             </nav>
 
-            <section className="step-viewport" aria-live="polite">
-          <div className="step-screen" key={activeStep.title}>
+            <section className="step-viewport" aria-live="polite" key={activeStep.title}>
+          <div className="step-screen">
             {currentStep === 0 ? (
               <section className="capture-stage" aria-label="拍照上傳">
                 <input
