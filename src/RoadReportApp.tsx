@@ -79,11 +79,11 @@ const FALLBACK_ITEMS: RepairItem[] = [
 ];
 
 const STEPS = [
-  { title: "拍照", hint: "先留下現場畫面" },
-  { title: "現況", hint: "選類型並描述問題" },
-  { title: "位置", hint: "確認地點與座標" },
-  { title: "聯絡", hint: "填寫必要聯絡方式" },
-  { title: "驗證", hint: "送出前輸入驗證碼" },
+  { title: "拍照" },
+  { title: "現況" },
+  { title: "位置" },
+  { title: "聯絡" },
+  { title: "驗證" },
 ] as const;
 
 const SAMPLE_REPORTS: ReportSummary[] = [
@@ -225,7 +225,6 @@ export function RoadReportApp() {
   const coordinateLabel = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
   const activeStep = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
-  const headerHint = appView === "overview" ? "查看校園回報分布" : activeStep.hint;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -465,7 +464,6 @@ export function RoadReportApp() {
           <div className="brand-block">
             <span className="brand-eyebrow" aria-hidden="true">NTU CAMPUS</span>
             <h1>道路狀況回報</h1>
-            <p>{headerHint}</p>
           </div>
           <div className="header-actions">
             <button

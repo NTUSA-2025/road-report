@@ -127,13 +127,6 @@ textarea:focus-visible,
   letter-spacing: 0.025em;
 }
 
-.app-header p {
-  margin: 5px 0 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
 .header-actions {
   display: flex;
   flex: 0 0 auto;
