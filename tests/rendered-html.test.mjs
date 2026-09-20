@@ -4,7 +4,7 @@ import test from "node:test";
 
 test("builds the road report app shell", async () => {
   const html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
-  assert.match(html, /<title>臺大道路狀況回報<\/title>/i);
+  assert.match(html, /<title>路平回報系統<\/title>/i);
   assert.match(html, /<div id="root"><\/div>/);
   assert.match(html, /type="module"/);
   assert.doesNotMatch(html, /_worker|__next|vinext|react-loading-skeleton|codex-preview/);
@@ -18,7 +18,7 @@ test("uses native Cloudflare Pages structure", async () => {
     readFile(new URL("../index.html", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../src/globals.css", import.meta.url), "utf8"),
-    readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
+    readFile(new URL("../public/favicon.png", import.meta.url)),
     readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
@@ -83,7 +83,9 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(css, /overflow:\s*hidden/);
   assert.match(css, /grid-template-rows:\s*auto auto minmax\(0,\s*1fr\) auto/);
   assert.match(css, /grid-template-columns:\s*58px minmax\(0,\s*1fr\)/);
-  assert.match(favicon, /stroke="#17624f"/);
+  assert.deepEqual(favicon.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  assert.match(html, /href="\/favicon.png"/);
+  assert.match(html, /href="\/favicon.ico"/);
   assert.match(wrangler, /name = "road-report"/);
   assert.match(wrangler, /pages_build_output_dir = "\.\/dist"/);
   assert.match(wrangler, /compatibility_date = "2026-09-14"/);
