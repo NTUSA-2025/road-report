@@ -4,7 +4,10 @@ import {
   Camera,
   Check,
   LocateFixed,
+  MapPin,
   MapPinned,
+  Minus,
+  Plus,
   RefreshCw,
   Send,
   Upload,
@@ -12,6 +15,7 @@ import {
 import type { Map as LeafletMap, Marker as LeafletMarker, TileLayer as LeafletTileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "react";
 import sampleRoadPhoto from "./assets/report-sample-road.jpg";
+import { bindMapCenterSelection } from "./map-center-selection";
 
 type RepairItem = {
   value: string;
@@ -145,7 +149,7 @@ export function RoadReportApp() {
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
-  const [geoMessage, setGeoMessage] = useState("地圖預設在臺大校園，可用定位或點選地圖修正。");
+  const [geoMessage, setGeoMessage] = useState("");
 
   useEffect(() => {
     function setAppHeight() {
@@ -235,7 +239,7 @@ export function RoadReportApp() {
 
   function handleLocate() {
     if (!navigator.geolocation) {
-      setGeoMessage("這台裝置不支援定位，請直接點選地圖標記位置。");
+      setGeoMessage("這台裝置不支援定位，請拖曳地圖選擇位置。");
       return;
     }
 
@@ -248,10 +252,10 @@ export function RoadReportApp() {
           source: "device",
         };
         updateCoords(next);
-        setGeoMessage("已更新為目前位置，仍可點選地圖微調。");
+        setGeoMessage("");
       },
       () => {
-        setGeoMessage("無法取得定位權限，請允許定位或用地圖手動標記。");
+        setGeoMessage("無法取得目前位置，請確認定位權限或拖曳地圖選擇位置。");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
     );
@@ -280,10 +284,8 @@ export function RoadReportApp() {
 
     if (meta.coordinates) {
       updateCoords({ ...meta.coordinates, source: "photo" });
-      setGeoMessage("已依照片的拍攝位置更新地圖。");
-    } else {
-      setGeoMessage("照片未記錄拍攝位置，可用手機定位或點選地圖。");
     }
+    setGeoMessage("");
   }
 
   async function refreshCaptcha() {
@@ -321,7 +323,7 @@ export function RoadReportApp() {
 
   function handleMapChange(next: Coordinates) {
     updateCoords({ ...next, source: "map" });
-    setGeoMessage("已更新為你在地圖上選擇的位置。");
+    setGeoMessage("");
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -620,23 +622,13 @@ export function RoadReportApp() {
             ) : null}
 
             {currentStep === 2 ? (
-              <section className="app-card location-card" aria-label="位置">
-                <div className="card-title">
-                  <span>3</span>
-                  <div>
-                    <h2>位置</h2>
-                    <p>{geoMessage}</p>
-                  </div>
-                </div>
-
-                <div className="location-actions">
-                  <button className="soft-button" type="button" onClick={handleLocate}>
-                    <LocateFixed aria-hidden="true" size={18} strokeWidth={2.4} />
-                    用手機定位
-                  </button>
-                </div>
-
-                <LowInterferenceMap coords={coords} onChange={handleMapChange} />
+              <section className="location-card" aria-label="位置">
+                <LowInterferenceMap
+                  coords={coords}
+                  onChange={handleMapChange}
+                  onLocate={handleLocate}
+                />
+                {geoMessage ? <p className="map-status" role="status">{geoMessage}</p> : null}
               </section>
             ) : null}
 
@@ -1204,14 +1196,16 @@ function describeMapTileError(error: unknown) {
 function LowInterferenceMap({
   coords,
   onChange,
+  onLocate,
 }: {
   coords: Coordinates;
   onChange: (coordinates: Coordinates) => void;
+  onLocate: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
-  const markerRef = useRef<LeafletMarker | null>(null);
-  const initialCoordsRef = useRef(coords);
+  const selectionRef = useRef<ReturnType<typeof bindMapCenterSelection> | null>(null);
+  const coordsRef = useRef(coords);
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
@@ -1220,6 +1214,7 @@ function LowInterferenceMap({
 
   useEffect(() => {
     let disposed = false;
+    let resizeObserver: ResizeObserver | undefined;
 
     async function setupMap() {
       const L = await import("leaflet");
@@ -1228,7 +1223,7 @@ function LowInterferenceMap({
         return;
       }
 
-      const initialCoords = initialCoordsRef.current;
+      const initialCoords = coordsRef.current;
       const map = L.map(containerRef.current, {
         attributionControl: false,
         zoomControl: false,
@@ -1237,56 +1232,64 @@ function LowInterferenceMap({
 
       createMapTileLayer(L, "report-form").addTo(map);
 
-      L.control.zoom({ position: "bottomright" }).addTo(map);
       L.control
         .attribution({ position: "bottomleft", prefix: false })
         .addTo(map);
 
-      const marker = L.marker([initialCoords.lat, initialCoords.lng], {
-        icon: L.divIcon({
-          className: "leaflet-report-marker",
-          iconAnchor: [14, 30],
-          iconSize: [28, 30],
-        }),
-        keyboard: false,
-      }).addTo(map);
-
-      map.on("click", (event) => {
-        onChangeRef.current({
-          lat: event.latlng.lat,
-          lng: event.latlng.lng,
-          source: "map",
-        });
-      });
-
       mapRef.current = map;
-      markerRef.current = marker;
-      window.requestAnimationFrame(() => map.invalidateSize());
+      selectionRef.current = bindMapCenterSelection(map, initialCoords, (position) => {
+        onChangeRef.current({ ...position, source: "map" });
+      });
+      resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize({ animate: false, pan: true });
+      });
+      resizeObserver.observe(containerRef.current);
     }
 
     setupMap();
 
     return () => {
       disposed = true;
+      resizeObserver?.disconnect();
+      selectionRef.current?.dispose();
+      selectionRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
-      markerRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const next: [number, number] = [coords.lat, coords.lng];
-    markerRef.current?.setLatLng(next);
-    mapRef.current?.panTo(next, { animate: true, duration: 0.25 });
-  }, [coords.lat, coords.lng]);
+    coordsRef.current = coords;
+    if (coords.source !== "map") {
+      selectionRef.current?.setPosition(coords);
+    }
+  }, [coords]);
 
   return (
-    <div
-      aria-label="拖曳或點選地圖更新位置"
-      className="map-canvas"
-      ref={containerRef}
-      role="application"
-    />
+    <>
+      <div
+        aria-label="拖曳地圖或使用方向鍵，將回報位置移至中央圖釘"
+        className="map-canvas"
+        ref={containerRef}
+        role="application"
+      />
+      <span className="map-center-pin" aria-hidden="true">
+        <MapPin className="leaflet-report-marker" size={40} strokeWidth={1.8} />
+      </span>
+      <div className="map-controls" role="group" aria-label="地圖控制">
+        <button className="map-locate-button" type="button" onClick={onLocate} aria-label="定位目前位置" title="定位目前位置">
+          <LocateFixed aria-hidden="true" size={20} />
+        </button>
+        <div className="map-zoom-controls">
+          <button type="button" onClick={() => mapRef.current?.zoomIn()} aria-label="放大地圖" title="放大地圖">
+            <Plus aria-hidden="true" size={20} />
+          </button>
+          <button type="button" onClick={() => mapRef.current?.zoomOut()} aria-label="縮小地圖" title="縮小地圖">
+            <Minus aria-hidden="true" size={20} />
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 

@@ -506,12 +506,88 @@ textarea:focus-visible,
 }
 
 .location-card {
-  grid-template-rows: auto auto minmax(180px, 1fr);
+  position: relative;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #e9ebef;
+  isolation: isolate;
 }
 
-.location-actions {
+.location-card .map-canvas {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: inherit;
+}
+
+.map-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  z-index: 500;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgb(255 255 255 / 95%);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+.map-center-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 450;
+  width: 40px;
+  height: 40px;
+  /* The icon's tip is at y=22 in its 24-unit view box. */
+  transform: translate(-50%, -91.666667%);
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 22%));
+}
+
+.map-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 32px;
+  z-index: 500;
   display: grid;
-  gap: 10px;
+  gap: 8px;
+}
+
+.map-controls button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: white;
+  color: var(--brand);
+}
+
+.map-controls button:hover {
+  background: var(--surface-soft);
+}
+
+.map-locate-button,
+.map-zoom-controls {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 12%);
+}
+
+.map-zoom-controls button:first-child {
+  border-bottom: 1px solid var(--line);
+  border-radius: 12px 12px 0 0;
+}
+
+.map-zoom-controls button:last-child {
+  border-radius: 0 0 12px 12px;
 }
 
 .soft-button {
@@ -701,16 +777,11 @@ textarea:focus-visible,
 }
 
 .leaflet-report-marker {
-  width: 30px;
-  height: 30px;
-  border: 4px solid white;
-  border-radius: 50% 50% 50% 0;
-  background: var(--brand);
-  box-shadow: 0 4px 14px rgb(24 34 29 / 25%);
-  transform: rotate(-45deg);
+  display: block;
+  fill: var(--brand);
+  stroke: white;
 }
 
-.leaflet-report-marker::after,
 .leaflet-overview-marker::after {
   position: absolute;
   inset: 6px;
