@@ -517,11 +517,6 @@ export function RoadReportApp() {
 
             <section className="step-viewport" aria-live="polite">
           <div className="step-screen" key={activeStep.title}>
-            <div className="step-heading">
-              <span>步驟 {currentStep + 1}</span>
-              <h2>{activeStep.title}</h2>
-            </div>
-
             {currentStep === 0 ? (
               <section className="capture-stage" aria-label="拍照上傳">
                 <input

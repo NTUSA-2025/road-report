@@ -226,6 +226,7 @@ textarea:focus-visible,
 .step-tab[aria-current="step"] {
   background: #eaf3ff;
   color: var(--brand);
+  font-weight: 700;
 }
 
 .step-tab[aria-current="step"] span {
@@ -244,8 +245,7 @@ textarea:focus-visible,
 
 .step-screen {
   display: grid;
-  grid-template-rows: auto minmax(min-content, 1fr);
-  gap: 18px;
+  grid-template-rows: minmax(min-content, 1fr);
   height: 100%;
   min-height: 420px;
   animation: pageIn 180ms ease-out;
@@ -254,32 +254,6 @@ textarea:focus-visible,
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.step-heading {
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.step-heading span {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 5px 10px;
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.step-heading h2 {
-  margin: 0;
-  color: var(--brand-dark);
-  font-size: 1.65rem;
-  font-weight: 750;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
 }
 
 .capture-stage {
@@ -945,8 +919,6 @@ textarea:focus-visible,
   .step-tabs { padding-top: 8px; padding-bottom: 8px; }
   .step-tab { min-height: 54px; gap: 4px; }
   .step-viewport { padding-top: 14px; padding-bottom: 12px; }
-  .step-screen { gap: 12px; }
-  .step-heading h2 { font-size: 1.4rem; }
   .app-card { gap: 14px; padding: 18px; }
   .card-title { padding-bottom: 12px; }
   .two-fields { gap: 14px; }
