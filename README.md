@@ -19,6 +19,27 @@
 - 位置送出強制使用 `Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期、相片說明與 `CapAns`
 
+## 介面配色
+
+配色取自 [臺大學生會 logo](public/ntusa_logo/NTUSA_Logo_1.png)，統一在 [`src/globals.css`](src/globals.css) 的 `:root` 定義。
+
+| 色彩 | 色碼 / CSS 變數 | 用途 |
+| --- | --- | --- |
+| Logo 青藍 | `#72B3C0` / `--brand` | 主要按鈕、目前步驟圓標底色、裝飾邊框 |
+| Logo 深藍灰 | `#313646` / `--brand-dark`、`--foreground` | 標題、內文、青藍按鈕上的文字與圖示 |
+| Logo 紅 | `#CD3846` / `--highlight` | 總覽地圖目前選取的標記 |
+| 白色 | `#FFFFFF` / `--surface` | 頁首、卡片與地圖標記描邊 |
+| 深青藍 | `#326975` / `--brand-ink` | 功能文字、圖示、地圖標記、選取邊框、鍵盤焦點框、成功訊息 |
+| 淺青藍 | `#EAF4F6` / `--brand-soft` | 步驟選取背景、次要按鈕、狀態標籤 |
+| 青藍邊框 | `#C6DFE4` / `--brand-border` | 次要按鈕與提示區塊邊框 |
+| 懸停青藍 | `#88BFC9` / `--brand-hover` | 主要按鈕滑鼠懸停狀態 |
+| 深紅 | `#B52E3B` / `--danger` | 錯誤訊息文字，搭配淡紅背景 |
+| 灰白背景 | `#F4F7F8` / `--background` | 頁面底色 |
+| 次要底色 | `#EDF3F5` / `--surface-soft` | 未選取步驟、返回按鈕及地圖載入底色 |
+| 次要文字 | `#647079` / `--muted` | 說明文字與輸入提示 |
+
+青藍原色搭配深藍灰文字，對比約為 **5.11:1**；小字或白底圖示使用深青藍衍生色。`--accent` 沿用青藍主色，`--accent-dark` 沿用深藍灰，`--success` 沿用深青藍。新增元件應優先使用這些變數，維持一致配色。
+
 ## 開發
 
 ```bash

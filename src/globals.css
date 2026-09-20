@@ -3,18 +3,24 @@
 
 :root {
   color-scheme: light;
-  --background: #f5f5f7;
+  --background: #f4f7f8;
   --surface: #ffffff;
-  --surface-soft: #f2f2f7;
-  --foreground: #1d1d1f;
-  --muted: #6e6e73;
-  --line: #e5e5ea;
-  --brand: #0071e3;
-  --brand-dark: #1d1d1f;
-  --accent: #0071e3;
-  --accent-dark: #ffffff;
-  --danger: #b42318;
-  --success: #24813d;
+  --surface-soft: #edf3f5;
+  --foreground: #313646;
+  --muted: #647079;
+  --line: #dce5e8;
+  /* Original NTUSA logo colors, with darker variants for readable text. */
+  --brand: #72b3c0;
+  --brand-ink: #326975;
+  --brand-hover: #88bfc9;
+  --brand-soft: #eaf4f6;
+  --brand-border: #c6dfe4;
+  --highlight: #cd3846;
+  --brand-dark: #313646;
+  --accent: var(--brand);
+  --accent-dark: var(--brand-dark);
+  --danger: #b52e3b;
+  --success: var(--brand-ink);
   --shadow: 0 4px 24px rgb(0 0 0 / 3%);
 }
 
@@ -36,7 +42,7 @@ body,
 }
 
 html {
-  background: #e8e8ed;
+  background: #e3ecef;
 }
 
 body {
@@ -71,7 +77,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [role="application"]:focus-visible {
-  outline: 3px solid #80b9f2;
+  outline: 3px solid var(--brand-ink);
   outline-offset: 3px;
 }
 
@@ -169,9 +175,9 @@ textarea:focus-visible,
 }
 
 .header-view-button[aria-pressed="true"] {
-  border-color: var(--brand);
+  border-color: var(--brand-ink);
   background: var(--brand);
-  color: white;
+  color: var(--brand-dark);
 }
 
 .step-tabs {
@@ -216,19 +222,19 @@ textarea:focus-visible,
 
 .step-tab svg {
   padding: 5px;
-  background: #e8f4eb;
-  color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
 }
 
 .step-tab[aria-current="step"] {
-  background: #eaf3ff;
-  color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
   font-weight: 700;
 }
 
 .step-tab[aria-current="step"] span {
   background: var(--brand);
-  color: white;
+  color: var(--brand-dark);
 }
 
 .step-viewport {
@@ -237,7 +243,7 @@ textarea:focus-visible,
   overscroll-behavior-y: contain;
   padding: 20px 20px 16px;
   scrollbar-width: thin;
-  scrollbar-color: #c7c7cc transparent;
+  scrollbar-color: #b5c9cf transparent;
 }
 
 .step-screen {
@@ -275,7 +281,7 @@ textarea:focus-visible,
 .photo-preview {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 24%, #ffffff, #f0f2f6 80%);
+  background: radial-gradient(ellipse at 50% 24%, var(--surface), var(--surface-soft) 80%);
 }
 
 .photo-preview::after {
@@ -312,8 +318,8 @@ textarea:focus-visible,
   height: 84px;
   flex: 0 0 auto;
   place-items: center;
-  color: var(--accent);
-  background: #e8f1fc;
+  color: var(--brand-ink);
+  background: var(--brand-soft);
   border-radius: 22px;
 }
 
@@ -323,7 +329,7 @@ textarea:focus-visible,
   width: 23px;
   height: 23px;
   content: "";
-  border-color: #b8cce4;
+  border-color: var(--brand);
   border-style: solid;
 }
 
@@ -394,7 +400,7 @@ textarea:focus-visible,
   min-height: 44px;
   border: 1px solid var(--line);
   background: rgb(255 255 255 / 95%);
-  color: var(--brand);
+  color: var(--brand-ink);
   font-size: 0.82rem;
 }
 
@@ -426,8 +432,8 @@ textarea:focus-visible,
   flex: 0 0 auto;
   place-items: center;
   border-radius: 13px;
-  background: #eaf3ff;
-  color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
   font-size: 0.9rem;
   font-weight: 750;
 }
@@ -481,7 +487,7 @@ textarea:focus-visible,
 .field-label input::placeholder,
 .field-label textarea::placeholder,
 .captcha-box input::placeholder {
-  color: #76767c;
+  color: var(--muted);
   opacity: 1;
 }
 
@@ -489,7 +495,7 @@ textarea:focus-visible,
 .field-label select:focus,
 .field-label textarea:focus,
 .captcha-box input:focus {
-  border-color: var(--brand);
+  border-color: var(--brand-ink);
   background: white;
 }
 
@@ -513,7 +519,7 @@ textarea:focus-visible,
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 24px;
-  background: #e9ebef;
+  background: var(--surface-soft);
   isolation: isolate;
 }
 
@@ -570,7 +576,7 @@ textarea:focus-visible,
   border: 0;
   padding: 0;
   background: white;
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 
 .map-controls button:hover {
@@ -594,10 +600,10 @@ textarea:focus-visible,
 
 .soft-button {
   min-height: 48px;
-  border: 1px solid #dceafa;
+  border: 1px solid var(--brand-border);
   border-radius: 13px;
   padding: 0 14px;
-  background: #eaf3ff;
+  background: var(--brand-soft);
   color: var(--brand-dark);
   font-size: 0.86rem;
   font-weight: 650;
@@ -658,7 +664,7 @@ textarea:focus-visible,
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: #e9ebef;
+  background: var(--surface-soft);
   isolation: isolate;
 }
 
@@ -738,7 +744,7 @@ textarea:focus-visible,
 .overview-report-meta span:first-child {
   border-radius: 6px;
   padding: 3px 6px;
-  background: #fff2d5;
+  background: var(--brand-soft);
   color: var(--brand-dark);
   font-weight: 650;
 }
@@ -746,7 +752,7 @@ textarea:focus-visible,
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #f2f2f7;
+  background: var(--surface-soft);
   color: var(--foreground);
   font-family: inherit;
 }
@@ -780,7 +786,7 @@ textarea:focus-visible,
 
 .leaflet-report-marker {
   display: block;
-  fill: var(--brand);
+  fill: var(--brand-ink);
   stroke: white;
 }
 
@@ -797,12 +803,12 @@ textarea:focus-visible,
   height: 30px;
   border: 4px solid white;
   border-radius: 50%;
-  background: var(--brand);
-  box-shadow: 0 4px 14px rgb(24 34 29 / 24%);
+  background: var(--brand-ink);
+  box-shadow: 0 4px 14px rgb(49 54 70 / 24%);
 }
 
 .leaflet-overview-marker.is-active {
-  background: var(--danger);
+  background: var(--highlight);
   transform: scale(1.12);
 }
 
@@ -817,7 +823,7 @@ textarea:focus-visible,
   display: grid;
   min-height: 84px;
   place-items: center;
-  border: 1px dashed #d1d1d6;
+  border: 1px dashed var(--brand-border);
   border-radius: 13px;
   background: #fafafa;
   color: var(--muted);
@@ -848,14 +854,14 @@ textarea:focus-visible,
 }
 
 .error-text {
-  border-color: #f5ddd5;
-  background: #fff3ee;
+  border-color: #efd0d4;
+  background: #fff1f2;
   color: var(--danger);
 }
 
 .success-text {
-  border-color: #d9ebdf;
-  background: #eff8f1;
+  border-color: var(--brand-border);
+  background: var(--brand-soft);
   color: var(--success);
 }
 
@@ -910,8 +916,8 @@ textarea:focus-visible,
 .submit-button {
   border: 1px solid var(--brand);
   background: var(--brand);
-  color: white;
-  box-shadow: 0 3px 8px rgb(0 113 227 / 12%);
+  color: var(--brand-dark);
+  box-shadow: 0 3px 8px rgb(49 54 70 / 12%);
 }
 
 .submit-button[type="button"] {
@@ -922,7 +928,7 @@ textarea:focus-visible,
   .header-view-button:not(:disabled):hover,
   .soft-button:not(:disabled):hover,
   .back-button:not(:disabled):hover {
-    background: #e5edf8;
+    background: #d9ebef;
     color: var(--brand-dark);
   }
 
@@ -931,15 +937,15 @@ textarea:focus-visible,
   }
 
   .submit-button:not(:disabled):hover {
-    background: #0077ed;
+    background: var(--brand-hover);
   }
 
   .camera-button:hover {
-    background: #0077ed;
+    background: var(--brand-hover);
   }
 
   .upload-photo-button:hover {
-    background: #f0f5fc;
+    background: var(--brand-soft);
   }
 }
 
