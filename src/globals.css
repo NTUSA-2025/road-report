@@ -100,8 +100,8 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: calc(20px + env(safe-area-inset-top)) 22px 18px;
+  gap: 10px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px 18px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
@@ -109,7 +109,7 @@ textarea:focus-visible,
 .brand-block {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -121,16 +121,18 @@ textarea:focus-visible,
 }
 
 .brand-copy {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
   min-width: 0;
 }
 
-.brand-eyebrow {
-  display: block;
-  margin-bottom: 6px;
+.brand-byline {
   color: var(--muted);
   font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .app-header h1 {
@@ -139,6 +141,7 @@ textarea:focus-visible,
   font-weight: 750;
   line-height: 1.35;
   letter-spacing: 0.025em;
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -907,7 +910,6 @@ textarea:focus-visible,
 
 @media (max-height: 740px) {
   .app-header { padding-top: calc(12px + env(safe-area-inset-top)); padding-bottom: 12px; }
-  .brand-eyebrow { margin-bottom: 3px; }
   .step-tabs { padding-top: 8px; padding-bottom: 8px; }
   .step-tab { min-height: 54px; gap: 4px; }
   .step-viewport { padding-top: 14px; padding-bottom: 12px; }
