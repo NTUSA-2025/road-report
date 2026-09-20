@@ -220,13 +220,6 @@ export function RoadReportApp() {
   }, [photoUrl]);
 
   const takenDate = photoMeta.takenAt ?? new Date();
-  const completionCount = [
-    photo,
-    description.trim(),
-    phone.trim(),
-    hasValidCoordinates(coords),
-    captchaAnswer.trim().length === 5,
-  ].filter(Boolean).length;
   const selectedItemLabel =
     items.find((item) => item.value === itemId)?.label ?? "路面";
   const coordinateLabel = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
@@ -484,11 +477,6 @@ export function RoadReportApp() {
               <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
               {appView === "overview" ? "回報" : "總覽"}
             </button>
-            {appView === "report" ? (
-              <div className="progress-pill" aria-label={`已完成 ${completionCount} 個必要步驟`}>
-                {completionCount}/5
-              </div>
-            ) : null}
           </div>
         </header>
 

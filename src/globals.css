@@ -162,21 +162,6 @@ textarea:focus-visible,
   color: white;
 }
 
-.progress-pill {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--surface-soft);
-  color: var(--brand);
-  font-size: 0.7rem;
-  font-weight: 750;
-  font-variant-numeric: tabular-nums;
-}
-
 .step-tabs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
