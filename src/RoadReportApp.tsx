@@ -770,6 +770,9 @@ export function RoadReportApp() {
           </>
         )}
       </form>
+      <footer className="copyright-footer">
+        <small>© {new Date().getFullYear()} 臺大學生會</small>
+      </footer>
     </main>
   );
 }

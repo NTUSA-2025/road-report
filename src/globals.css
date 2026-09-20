@@ -76,6 +76,8 @@ textarea:focus-visible,
 }
 
 .mobile-app-shell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   width: 100%;
   max-width: 480px;
   height: var(--app-height, 100dvh);
@@ -607,7 +609,7 @@ textarea:focus-visible,
   gap: 18px;
   min-height: 0;
   overflow: auto;
-  padding: 20px 20px max(20px, env(safe-area-inset-bottom));
+  padding: 20px;
 }
 
 .overview-summary {
@@ -859,10 +861,22 @@ textarea:focus-visible,
 
 .bottom-dock {
   z-index: 2;
-  padding: 14px 20px calc(16px + env(safe-area-inset-bottom));
+  padding: 14px 20px 10px;
   border-top: 1px solid var(--line);
   background: rgb(255 255 255 / 92%);
   backdrop-filter: blur(20px);
+}
+
+.copyright-footer {
+  padding: 4px 20px calc(10px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.copyright-footer small {
+  font-size: 0.65rem;
 }
 
 .dock-message {
@@ -947,7 +961,7 @@ textarea:focus-visible,
   .app-card { gap: 14px; padding: 18px; }
   .card-title { padding-bottom: 12px; }
   .two-fields { gap: 14px; }
-  .bottom-dock { padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+  .bottom-dock { padding-top: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
