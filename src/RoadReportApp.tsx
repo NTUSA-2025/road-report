@@ -222,7 +222,6 @@ export function RoadReportApp() {
   const takenDate = photoMeta.takenAt ?? new Date();
   const selectedItemLabel =
     items.find((item) => item.value === itemId)?.label ?? "路面";
-  const coordinateLabel = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
   const activeStep = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -249,7 +248,7 @@ export function RoadReportApp() {
           source: "device",
         };
         updateCoords(next);
-        setGeoMessage("已用手機定位更新座標，仍可點地圖微調。");
+        setGeoMessage("已更新為目前位置，仍可點選地圖微調。");
       },
       () => {
         setGeoMessage("無法取得定位權限，請允許定位或用地圖手動標記。");
@@ -281,9 +280,9 @@ export function RoadReportApp() {
 
     if (meta.coordinates) {
       updateCoords({ ...meta.coordinates, source: "photo" });
-      setGeoMessage("已從照片 EXIF 讀到座標並更新地圖。");
+      setGeoMessage("已依照片的拍攝位置更新地圖。");
     } else {
-      setGeoMessage("照片沒有可讀取的 GPS 資訊；可用手機定位或點選地圖。");
+      setGeoMessage("照片未記錄拍攝位置，可用手機定位或點選地圖。");
     }
   }
 
@@ -322,7 +321,7 @@ export function RoadReportApp() {
 
   function handleMapChange(next: Coordinates) {
     updateCoords({ ...next, source: "map" });
-    setGeoMessage("已依照地圖位置更新座標。");
+    setGeoMessage("已更新為你在地圖上選擇的位置。");
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -635,15 +634,9 @@ export function RoadReportApp() {
                     <LocateFixed aria-hidden="true" size={18} strokeWidth={2.4} />
                     用手機定位
                   </button>
-                  <div className="coord-chip">{coordinateLabel}</div>
                 </div>
 
                 <LowInterferenceMap coords={coords} onChange={handleMapChange} />
-
-                <div className="coordinate-panel">
-                  <span>送出座標</span>
-                  <strong>{formatCoordinateValue(coords)}</strong>
-                </div>
               </section>
             ) : null}
 
