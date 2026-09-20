@@ -462,8 +462,17 @@ export function RoadReportApp() {
       >
         <header className="app-header">
           <div className="brand-block">
-            <span className="brand-eyebrow" aria-hidden="true">NTU CAMPUS</span>
-            <h1>道路狀況回報</h1>
+            <img
+              alt=""
+              className="brand-logo"
+              height={32}
+              src="/ntusa_logo/NTUSA_Logo_1.png"
+              width={32}
+            />
+            <div className="brand-copy">
+              <span className="brand-eyebrow">臺大學生會</span>
+              <h1>道路狀況回報</h1>
+            </div>
           </div>
           <div className="header-actions">
             <button

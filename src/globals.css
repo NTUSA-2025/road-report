@@ -107,6 +107,20 @@ textarea:focus-visible,
 }
 
 .brand-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.brand-copy {
   min-width: 0;
 }
 
@@ -114,9 +128,9 @@ textarea:focus-visible,
   display: block;
   margin-bottom: 6px;
   color: var(--muted);
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
 .app-header h1 {
