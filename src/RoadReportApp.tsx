@@ -471,7 +471,7 @@ export function RoadReportApp() {
             />
             <div className="brand-copy">
               <span className="brand-eyebrow">臺大學生會</span>
-              <h1>道路狀況回報</h1>
+              <h1>路平回報系統</h1>
             </div>
           </div>
           <div className="header-actions">

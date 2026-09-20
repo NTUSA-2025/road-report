@@ -4,7 +4,7 @@ import test from "node:test";
 
 test("builds the road report app shell", async () => {
   const html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
-  assert.match(html, /<title>臺大道路狀況回報<\/title>/i);
+  assert.match(html, /<title>路平回報系統<\/title>/i);
   assert.match(html, /<div id="root"><\/div>/);
   assert.match(html, /type="module"/);
   assert.doesNotMatch(html, /_worker|__next|vinext|react-loading-skeleton|codex-preview/);
