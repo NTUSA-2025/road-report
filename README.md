@@ -49,6 +49,13 @@ npm install
 npm run build
 ```
 
+本機全端測試使用 `npm run dev:pages`，會啟動 Pages 靜態頁面與 Functions，並以 `ROAD_REPORT_KV`、`road-report-db`、`road-report-r2` 這三個 binding 名稱建立本機 KV、D1、R2。資料保存在忽略版控的 `.wrangler/state`，與 Dashboard 的正式資源分開。首次送出前先在本機 D1 建表：
+
+```bash
+npx wrangler d1 execute road-report-db --config=wrangler.local.jsonc --local --persist-to=.wrangler/state --file=migrations/0001_reports.sql
+npm run dev:pages
+```
+
 建立 `.env` 並填入 CARTO API key：
 
 ```bash
@@ -79,7 +86,13 @@ Pages Functions 使用的 Dashboard binding **變數名稱**如下。名稱須�
 | R2 | `road-report-r2` | 以 `reports/{id}/photo` 為 key 儲存原始照片。 |
 | KV | `ROAD_REPORT_KV` | 以 `report:{id}` 為 key 儲存不含聯絡資訊的報修狀態索引。 |
 
-D1 建表 SQL 在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)。首次啟用送出前，需將它套用到對應環境的 D1 資料庫；**部署網站不會自動建表**。可在 Cloudflare Dashboard 的 D1 Console 執行該檔 SQL，或使用 `npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.sql`。這裡的 `road-report-db` 是資料庫名稱，若 Dashboard 中實際資料庫名稱不同，請替換為實際名稱。套用 Production SQL 前請確認目標資料庫。
+D1 建表 SQL 在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)；**部署網站不會自動建表**。本機使用上方的 `--local` 指令。正式 D1 使用下列指令，這會修改 Cloudflare 上的資料庫；請先確認登入的帳號與資料庫名稱：
+
+```bash
+npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.sql
+```
+
+`wrangler.local.jsonc` 只供本機 D1 建表使用，其中 `database_id` 是固定的本機識別值，不是正式資源 ID。正式與 Preview binding 仍由 Dashboard 管理。
 
 目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：直接寫入 D1、R2、KV，沿用 `submitted` 狀態，**不會向學校取得 session、顯示或檢查 captcha，也不會 POST 到學校表單**。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會使用學校 session、captcha 與 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
 
