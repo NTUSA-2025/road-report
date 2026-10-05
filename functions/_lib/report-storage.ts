@@ -2,16 +2,18 @@ const CONTACT_NOT_SAVED = "opt-out";
 
 type D1Statement = {
   bind(...values: (string | number | null)[]): D1Statement;
-  first(): Promise<unknown>;
+  first<T>(): Promise<T | null>;
+  all<T>(): Promise<{ results: T[] }>;
   run(): Promise<{ success: boolean }>;
 };
 
-type ReportDatabase = {
+export type ReportDatabase = {
   prepare(query: string): D1Statement;
 };
 
-type ReportBucket = {
+export type ReportBucket = {
   put(key: string, value: ArrayBuffer, options: { httpMetadata: { contentType: string } }): Promise<unknown>;
+  get(key: string): Promise<{ body: ReadableStream } | null>;
   delete(key: string): Promise<void>;
 };
 
@@ -39,6 +41,35 @@ export function reportStorage(env: ReportStorageEnv) {
 
 export async function checkReportSchema(database: ReportDatabase) {
   await database.prepare("SELECT id FROM reports LIMIT 1").first();
+}
+
+export type PublicReportRow = {
+  id: string;
+  created_at: string;
+  status: string;
+  broken_item_id: string;
+  reason: string;
+  location_note: string;
+  latitude: number;
+  longitude: number;
+};
+
+export async function listPublicReports(database: ReportDatabase) {
+  const [count, rows] = await Promise.all([
+    database.prepare("SELECT COUNT(*) AS total FROM reports").first<{ total: number }>(),
+    database.prepare(`
+      SELECT id, created_at, status, broken_item_id, reason, location_note, latitude, longitude
+      FROM reports ORDER BY created_at DESC, id DESC LIMIT 100
+    `).all<PublicReportRow>(),
+  ]);
+
+  return { total: count?.total ?? 0, rows: rows.results };
+}
+
+export function findReportPhoto(database: ReportDatabase, id: string) {
+  return database.prepare(
+    "SELECT photo_key, photo_content_type FROM reports WHERE id = ?",
+  ).bind(id).first<{ photo_key: string; photo_content_type: string }>();
 }
 
 export async function saveReport(

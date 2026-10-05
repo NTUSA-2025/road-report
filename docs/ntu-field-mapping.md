@@ -77,7 +77,7 @@
 
 ## 本站儲存
 
-表結構見 [`migrations/0001_reports.sql`](../migrations/0001_reports.sql)。D1 儲存回報時間、項目、描述、位置附註與座標、照片拍攝日期、R2 key 與照片資訊，以及依開關處理後的聯絡欄位。`school_case_number` 預留為可空欄位；目前不擷取或寫入學校案號。R2 儲存原始照片；KV 的 `report:{id}` 僅含本站報修 ID、建立時間與 `submitted` 狀態。總覽目前仍使用假資料，沒有從 D1 讀取回報。
+表結構見 [`migrations/0001_reports.sql`](../migrations/0001_reports.sql)。D1 儲存回報時間、項目、描述、位置附註與座標、照片拍攝日期、R2 key 與照片資訊，以及依開關處理後的聯絡欄位。`school_case_number` 預留為可空欄位；目前不擷取或寫入學校案號。R2 儲存原始照片；KV 的 `report:{id}` 僅含本站報修 ID、建立時間與 `submitted` 狀態。總覽讀取 D1 最近 100 件回報，照片經由 R2 讀取端點顯示，不讀取聯絡欄位。
 
 ## 目前必填檢查
 

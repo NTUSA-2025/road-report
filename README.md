@@ -11,14 +11,14 @@
 ## 功能
 
 - 地圖預設在臺大校園，支援手機定位與點選地圖更新座標
-- 回報狀況總覽為純前端 POC，以地圖呈現假資料地點、照片與描述
+- 回報狀況總覽讀取 D1 最近 100 件回報，以地圖呈現位置、描述與 R2 照片；總件數來自 D1
 - 手機拍照按鈕位於照片區中下方，使用 `capture="environment"`
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
 - Captcha 以 proxy 圖片顯示，使用者手動輸入 5 碼；目前資料庫模式仍顯示與要求輸入，但不送往 NTU 驗證
 - 位置送出使用必填的 `LocationNote`、`Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`（例：`傅鐘前方柏油路：25.017340, 121.539750`）
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期與 `CapAns`
-- 學校接受報修後，把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
+- 送出後把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
 - 聯絡步驟可選擇是否讓本站儲存姓名、電話與 E-mail；預設關閉，關閉時 D1 的三個欄位均存 `opt-out`
 
 ## 介面配色
@@ -103,5 +103,7 @@ npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.s
 `npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
 
 本站不將 Cloudflare 資源 ID 寫入公開 repo。Pages 專案設定與 KV、D1、R2 binding 由 Dashboard 管理；新增或調整 binding 後需重新部署。`CARTO_API_KEY` 的值也只放在 Dashboard secret 與本機未追蹤的 `.env`。
+
+總覽使用 `GET /api/reports` 讀取最新 100 件回報與資料庫總件數，並以 `GET /api/reports/{id}/photo` 取得照片。公開查詢只取回報項目、描述、位置、狀態與時間；不回傳姓名、電話、Email、NTU session 或驗證碼。
 
 本專案刻意不自動破解 captcha，只把 NTU 原表單的 captcha 接到本站顯示，仍由使用者辨識輸入。

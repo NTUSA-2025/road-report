@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import type { Map as LeafletMap, Marker as LeafletMarker, TileLayer as LeafletTileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "react";
-import sampleRoadPhoto from "./assets/report-sample-road.jpg";
 import { bindMapCenterSelection } from "./map-center-selection";
 
 type RepairItem = {
@@ -48,9 +47,17 @@ type ReportSummary = {
   title: string;
   description: string;
   status: string;
+  itemId: string;
   photoUrl: string;
   coordinates: Coordinates;
   reportedAt: string;
+};
+
+type OverviewState = {
+  reports: ReportSummary[];
+  total: number;
+  loading: boolean;
+  error: string;
 };
 
 const DEFAULT_COORDS: Coordinates = {
@@ -90,40 +97,14 @@ const STEPS = [
   { title: "驗證" },
 ] as const;
 
-const SAMPLE_REPORTS: ReportSummary[] = [
-  {
-    id: "rr-001",
-    title: "辛亥路側門路面破損",
-    description: "柏油破裂且有凹陷，腳踏車經過時容易晃動。",
-    status: "待處理",
-    photoUrl: sampleRoadPhoto,
-    coordinates: { lat: 25.01734, lng: 121.53975, source: "map" },
-    reportedAt: "2026/09/14 09:20",
-  },
-  {
-    id: "rr-002",
-    title: "椰林大道旁人孔蓋鬆動",
-    description: "車輛壓過時會有明顯聲響，邊緣高度不平。",
-    status: "已轉派",
-    photoUrl: sampleRoadPhoto,
-    coordinates: { lat: 25.01662, lng: 121.53672, source: "map" },
-    reportedAt: "2026/09/13 17:42",
-  },
-  {
-    id: "rr-003",
-    title: "綜合教學館前積水",
-    description: "雨後低窪處積水，行人需繞行到車道邊。",
-    status: "追蹤中",
-    photoUrl: sampleRoadPhoto,
-    coordinates: { lat: 25.01818, lng: 121.54118, source: "map" },
-    reportedAt: "2026/09/07 12:08",
-  },
-];
-
 export function RoadReportApp() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [appView, setAppView] = useState<AppView>("report");
+  const [overview, setOverview] = useState<OverviewState>({
+    reports: [], total: 0, loading: false, error: "",
+  });
+  const [overviewReload, setOverviewReload] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState<Coordinates>(DEFAULT_COORDS);
   const [items, setItems] = useState<RepairItem[]>(FALLBACK_ITEMS);
@@ -215,6 +196,45 @@ export function RoadReportApp() {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (appView !== "overview") {
+      return;
+    }
+
+    const controller = new AbortController();
+    setOverview({ reports: [], total: 0, loading: true, error: "" });
+
+    async function loadReports() {
+      try {
+        const response = await fetch("/api/reports", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+
+        if (!response.ok || !Array.isArray(payload.reports) || typeof payload.total !== "number") {
+          throw new Error(payload.error ?? "無法載入回報總覽。");
+        }
+
+        if (!controller.signal.aborted) {
+          setOverview({ reports: payload.reports, total: payload.total, loading: false, error: "" });
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setOverview({
+            reports: [],
+            total: 0,
+            loading: false,
+            error: error instanceof Error ? error.message : "無法載入回報總覽。",
+          });
+        }
+      }
+    }
+
+    void loadReports();
+    return () => controller.abort();
+  }, [appView, overviewReload]);
 
   useEffect(() => {
     return () => {
@@ -491,7 +511,11 @@ export function RoadReportApp() {
         </header>
 
         {appView === "overview" ? (
-          <ReportOverview reports={SAMPLE_REPORTS} />
+          <ReportOverview
+            {...overview}
+            items={items}
+            onRetry={() => setOverviewReload((current) => current + 1)}
+          />
         ) : (
           <>
             <nav className="step-tabs" aria-label="回報步驟">
@@ -791,52 +815,74 @@ export function RoadReportApp() {
   );
 }
 
-function ReportOverview({ reports }: { reports: ReportSummary[] }) {
+function ReportOverview({
+  reports,
+  total,
+  loading,
+  error,
+  items,
+  onRetry,
+}: OverviewState & { items: RepairItem[]; onRetry: () => void }) {
   const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
   const selectedReport = reports.find((report) => report.id === selectedId) ?? reports[0];
-
-  if (!selectedReport) {
-    return null;
-  }
+  const selectedItemLabel = items.find((item) => item.value === selectedReport?.itemId)?.label;
 
   return (
     <section className="overview-page" aria-label="回報狀況總覽">
-      <div className="overview-summary" aria-label="POC 回報摘要">
+      <div className="overview-summary" aria-label="回報摘要">
         <div>
           <span>總件數</span>
+          <strong>{total}</strong>
+        </div>
+        <div>
+          <span>地圖顯示</span>
           <strong>{reports.length}</strong>
         </div>
         <div>
-          <span>待處理</span>
-          <strong>{reports.filter((report) => report.status === "待處理").length}</strong>
-        </div>
-        <div>
-          <span>資料來源</span>
-          <strong>POC</strong>
+          <span>回報類型</span>
+          <strong>{new Set(reports.map((report) => report.itemId)).size}</strong>
         </div>
       </div>
 
-      <div className="overview-map-shell">
-        <ReportOverviewMap
-          reports={reports}
-          selectedId={selectedReport.id}
-          onSelect={setSelectedId}
-        />
-        <article className="overview-report-panel" aria-live="polite">
-          <img alt={`${selectedReport.title}照片`} src={selectedReport.photoUrl} />
-          <div>
-            <div className="overview-report-meta">
-              <span>{selectedReport.status}</span>
-              <span>{selectedReport.reportedAt}</span>
+      {loading || error || !selectedReport ? (
+        <div className="overview-message" role={error ? "alert" : "status"}>
+          <p>{loading ? "載入回報中..." : error || "目前還沒有回報資料。"}</p>
+          {error ? <button className="soft-button" onClick={onRetry} type="button">重試</button> : null}
+        </div>
+      ) : (
+        <div className="overview-map-shell">
+          <ReportOverviewMap
+            reports={reports}
+            selectedId={selectedReport.id}
+            onSelect={setSelectedId}
+          />
+          <article className="overview-report-panel" aria-live="polite">
+            <img alt={`${selectedReport.title}照片`} loading="lazy" src={selectedReport.photoUrl} />
+            <div>
+              <div className="overview-report-meta">
+                <span>{selectedReport.status}</span>
+                {selectedItemLabel ? <span>{selectedItemLabel}</span> : null}
+                <span>{formatReportDate(selectedReport.reportedAt)}</span>
+              </div>
+              <h2>{selectedReport.title}</h2>
+              <p>{selectedReport.description}</p>
+              <strong>{formatCoordinateValue(selectedReport.coordinates)}</strong>
             </div>
-            <h2>{selectedReport.title}</h2>
-            <p>{selectedReport.description}</p>
-            <strong>{formatCoordinateValue(selectedReport.coordinates)}</strong>
-          </div>
-        </article>
-      </div>
+          </article>
+        </div>
+      )}
     </section>
   );
+}
+
+function formatReportDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString("zh-TW", {
+      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+      hour12: false,
+    });
 }
 
 function ReportOverviewMap({

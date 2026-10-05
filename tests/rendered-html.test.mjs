@@ -34,8 +34,8 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(html, /\/src\/main\.tsx/);
   assert.match(app, /from "lucide-react"/);
   assert.match(app, /MapPinned/);
-  assert.match(app, /report-sample-road\.jpg/);
-  assert.match(app, /const SAMPLE_REPORTS: ReportSummary\[\]/);
+  assert.match(app, /fetch\("\/api\/reports"/);
+  assert.doesNotMatch(app, /SAMPLE_REPORTS/);
   assert.match(app, /function ReportOverview/);
   assert.match(app, /function ReportOverviewMap/);
   assert.match(app, /回報狀況總覽/);
@@ -126,7 +126,6 @@ test("uses native Cloudflare Pages structure", async () => {
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
-  await access(new URL("../src/assets/report-sample-road.jpg", import.meta.url));
 });
 
 test("prepares Cloudflare Pages static output", async () => {

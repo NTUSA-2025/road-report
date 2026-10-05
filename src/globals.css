@@ -689,6 +689,24 @@ textarea:focus-visible,
   overflow-wrap: anywhere;
 }
 
+.overview-message {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+}
+
+.overview-message p {
+  margin: 0;
+}
+
 .overview-summary span {
   color: var(--muted);
   font-size: 0.72rem;
