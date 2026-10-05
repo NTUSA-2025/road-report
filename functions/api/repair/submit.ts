@@ -13,6 +13,7 @@ const REQUIRED_FIELDS = [
   "ApplicantPhone",
   "Latitude",
   "Longitude",
+  "LocationNote",
   "BrokenItemId",
   "Reason",
   "CapAns",
@@ -38,8 +39,9 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
   const incoming = await request.formData();
   const missing = REQUIRED_FIELDS.find((field) => !`${incoming.get(field) ?? ""}`.trim());
   const image = incoming.get("ImageFiles");
+  const coordinates = coordinatesValue(incoming);
 
-  if (missing || !coordinatesValue(incoming) || !(image instanceof File) || image.size === 0) {
+  if (missing || !coordinates || !(image instanceof File) || image.size === 0) {
     return jsonResponse(
       { error: "請確認必填欄位、經緯度、照片與驗證碼都已填寫。" },
       { status: 400 },
@@ -51,7 +53,8 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
   upstream.set("ApplicantName", textValue(incoming, "ApplicantName"));
   upstream.set("ApplicantPhone", textValue(incoming, "ApplicantPhone"));
   upstream.set("ApplicantEmail", textValue(incoming, "ApplicantEmail"));
-  upstream.set("Location", coordinatesValue(incoming) ?? "");
+  const locationNote = textValue(incoming, "LocationNote");
+  upstream.set("Location", `${locationNote}：${coordinates}`);
   upstream.set("BrokenItemId", textValue(incoming, "BrokenItemId"));
   upstream.set("Reason", textValue(incoming, "Reason"));
   upstream.set("ImageFiles", image, image.name);

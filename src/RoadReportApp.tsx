@@ -135,6 +135,7 @@ export function RoadReportApp() {
   });
   const [description, setDescription] = useState("");
   const [itemId, setItemId] = useState("5");
+  const [locationNote, setLocationNote] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -358,6 +359,7 @@ export function RoadReportApp() {
     formData.set("ApplicantPhone", phone);
     formData.set("ApplicantEmail", email);
     formData.set("Location", formatCoordinateValue(coords));
+    formData.set("LocationNote", locationNote);
     formData.set("BrokenItemId", itemId);
     formData.set("Reason", description);
     formData.set("ImageDescription", moreInfo);
@@ -439,8 +441,14 @@ export function RoadReportApp() {
       }
     }
 
-    if (step === 2 && !hasValidCoordinates(coords)) {
-      return "請先確認有效的經緯度位置。";
+    if (step === 2) {
+      if (!hasValidCoordinates(coords)) {
+        return "請先確認有效的經緯度位置。";
+      }
+
+      if (!locationNote.trim()) {
+        return "請先填寫位置附註。";
+      }
     }
 
     if (step === 3 && !phone.trim()) {
@@ -622,14 +630,27 @@ export function RoadReportApp() {
             ) : null}
 
             {currentStep === 2 ? (
-              <section className="location-card" aria-label="位置">
-                <LowInterferenceMap
-                  coords={coords}
-                  onChange={handleMapChange}
-                  onLocate={handleLocate}
-                />
-                {geoMessage ? <p className="map-status" role="status">{geoMessage}</p> : null}
-              </section>
+              <div className="location-step">
+                <section className="location-card" aria-label="位置">
+                  <LowInterferenceMap
+                    coords={coords}
+                    onChange={handleMapChange}
+                    onLocate={handleLocate}
+                  />
+                  {geoMessage ? <p className="map-status" role="status">{geoMessage}</p> : null}
+                </section>
+                <label className="field-label">
+                  位置附註
+                  <input
+                    maxLength={100}
+                    onChange={(event) => setLocationNote(event.target.value)}
+                    placeholder="例：傅鐘前方柏油路"
+                    required
+                    type="text"
+                    value={locationNote}
+                  />
+                </label>
+              </div>
             ) : null}
 
             {currentStep === 3 ? (
