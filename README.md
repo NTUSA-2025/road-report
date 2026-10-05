@@ -51,6 +51,8 @@ npm run build
 
 本機全端測試使用 `npm run dev:pages`，會啟動 Pages 靜態頁面與 Functions，並以 `ROAD_REPORT_KV`、`road-report-db`、`road-report-r2` 這三個 binding 名稱建立本機 KV、D1、R2。資料保存在忽略版控的 `.wrangler/state`，與 Dashboard 的正式資源分開。首次送出前先在本機 D1 建表：
 
+本機 Wrangler 執行環境目前支援的最新 compatibility date 是 `2026-05-22`，因此 `dev:pages` 與 `wrangler.local.jsonc` 使用這個日期；Dashboard 的 Production／Preview 設定仍為 `2026-09-14`。
+
 ```bash
 npx wrangler d1 execute road-report-db --config=wrangler.local.jsonc --local --persist-to=.wrangler/state --file=migrations/0001_reports.sql
 npm run dev:pages

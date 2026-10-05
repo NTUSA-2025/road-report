@@ -78,7 +78,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(packageJson, /"leaflet"/);
   assert.match(packageJson, /"@types\/leaflet"/);
   assert.match(packageJson, /"lucide-react"/);
-  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-09-14 --compatibility-flags=nodejs_compat --kv=ROAD_REPORT_KV --r2=road-report-r2 --d1=road-report-db --persist-to=\.wrangler\/state"/);
+  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-05-22 --compatibility-flags=nodejs_compat --kv=ROAD_REPORT_KV --r2=road-report-r2 --d1=road-report-db --persist-to=\.wrangler\/state"/);
   assert.match(css, /@import "leaflet\/dist\/leaflet\.css"/);
   assert.match(css, /\.leaflet-report-marker/);
   assert.match(css, /\.leaflet-overview-marker/);
