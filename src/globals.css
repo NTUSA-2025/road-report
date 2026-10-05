@@ -241,7 +241,7 @@ textarea:focus-visible,
   min-height: 0;
   overflow: auto;
   overscroll-behavior-y: contain;
-  padding: 20px 20px 16px;
+  padding: 20px 20px calc(16px + var(--keyboard-inset, 0px));
   scrollbar-width: thin;
   scrollbar-color: #b5c9cf transparent;
 }
@@ -1022,7 +1022,7 @@ textarea:focus-visible,
   .app-header { padding-top: calc(12px + env(safe-area-inset-top)); padding-bottom: 12px; }
   .step-tabs { padding-top: 8px; padding-bottom: 8px; }
   .step-tab { min-height: 54px; gap: 4px; }
-  .step-viewport { padding-top: 14px; padding-bottom: 12px; }
+  .step-viewport { padding-top: 14px; padding-bottom: calc(12px + var(--keyboard-inset, 0px)); }
   .app-card { gap: 14px; padding: 18px; }
   .two-fields { gap: 14px; }
   .bottom-dock { padding-top: 10px; }

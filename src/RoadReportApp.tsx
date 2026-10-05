@@ -135,18 +135,39 @@ export function RoadReportApp() {
   const [geoMessage, setGeoMessage] = useState("");
 
   useEffect(() => {
-    function setAppHeight() {
-      const height = window.visualViewport?.height ?? window.innerHeight;
-      document.documentElement.style.setProperty("--app-height", `${height}px`);
+    let appHeight = window.innerHeight;
+
+    function updateViewport() {
+      const focused = document.activeElement;
+      const keyboardInput = focused instanceof HTMLTextAreaElement ||
+        (focused instanceof HTMLInputElement && !["checkbox", "file", "radio"].includes(focused.type));
+
+      if (!keyboardInput) {
+        appHeight = window.innerHeight;
+      }
+
+      const viewport = window.visualViewport;
+      const keyboardInset = keyboardInput && viewport
+        ? Math.max(0, appHeight - viewport.height - viewport.offsetTop)
+        : 0;
+
+      document.documentElement.style.setProperty("--app-height", `${appHeight}px`);
+      document.documentElement.style.setProperty("--keyboard-inset", `${keyboardInset}px`);
     }
 
-    setAppHeight();
-    window.addEventListener("resize", setAppHeight);
-    window.visualViewport?.addEventListener("resize", setAppHeight);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("scroll", updateViewport);
+    document.addEventListener("focusin", updateViewport);
+    document.addEventListener("focusout", updateViewport);
 
     return () => {
-      window.removeEventListener("resize", setAppHeight);
-      window.visualViewport?.removeEventListener("resize", setAppHeight);
+      window.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("scroll", updateViewport);
+      document.removeEventListener("focusin", updateViewport);
+      document.removeEventListener("focusout", updateViewport);
     };
   }, []);
 
