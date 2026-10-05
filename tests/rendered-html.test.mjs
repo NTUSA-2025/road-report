@@ -34,8 +34,10 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(html, /\/src\/main\.tsx/);
   assert.match(app, /from "lucide-react"/);
   assert.match(app, /MapPinned/);
-  assert.match(app, /report-sample-road\.jpg/);
-  assert.match(app, /const SAMPLE_REPORTS: ReportSummary\[\]/);
+  assert.match(app, /<ArrowLeft aria-hidden="true" size=\{18\} strokeWidth=\{2\.4\} \/>/);
+  assert.match(app, /返回回報頁面/);
+  assert.match(app, /fetch\("\/api\/reports"/);
+  assert.doesNotMatch(app, /SAMPLE_REPORTS/);
   assert.match(app, /function ReportOverview/);
   assert.match(app, /function ReportOverviewMap/);
   assert.match(app, /回報狀況總覽/);
@@ -63,8 +65,10 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
   assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
   assert.match(app, /setSubmitEnabled\(payload\.submitEnabled === true\)/);
-  assert.match(app, /報修送出目前暫停開放，驗證碼仍會正常載入。/);
-  assert.match(app, /disabled=\{submitState === "submitting" \|\| captcha\.loading \|\| !submitEnabled\}/);
+  assert.match(app, /\{currentStep === 4 \? \(/);
+  assert.match(app, /formData\.set\("CapAns", captchaAnswer\.trim\(\)\)/);
+  assert.doesNotMatch(app, /報修送出目前暫停開放，驗證碼仍會正常載入。/);
+  assert.match(app, /disabled=\{submitState === "submitting" \|\| submitState === "success" \|\| captcha\.loading \|\| !submitEnabled\}/);
   assert.match(app, /url\.startsWith\("data:"\)/);
   assert.match(app, /const separator = url\.includes\("\?"\) \? "&" : "\?"/);
   assert.doesNotMatch(app, /captchaUrl\}&v=/);
@@ -77,7 +81,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(packageJson, /"leaflet"/);
   assert.match(packageJson, /"@types\/leaflet"/);
   assert.match(packageJson, /"lucide-react"/);
-  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-09-14 --compatibility-flags=nodejs_compat"/);
+  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-05-22 --compatibility-flags=nodejs_compat --kv=ROAD_REPORT_KV --r2=road-report-r2 --d1=road-report-db --persist-to=\.wrangler\/state"/);
   assert.match(css, /@import "leaflet\/dist\/leaflet\.css"/);
   assert.match(css, /\.leaflet-report-marker/);
   assert.match(css, /\.leaflet-overview-marker/);
@@ -96,13 +100,16 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(ntu, /fetchCaptchaImageDataUrl/);
   assert.match(ntu, /data:\$\{contentType\};base64/);
   assert.match(flags, /REPAIR_SUBMIT_ENABLED\?: string/);
+  assert.match(flags, /FORWARD_TO_NTU = false/);
   assert.match(flags, /\["1", "true", "yes", "on"\]/);
   assert.match(session, /captchaUrl: captchaImageUrl/);
   assert.match(session, /captchaProxyUrl: captchaUrl\(\)/);
-  assert.match(session, /submitEnabled: isRepairSubmitEnabled\(env\)/);
+  assert.match(session, /submitEnabled: !FORWARD_TO_NTU \|\| isRepairSubmitEnabled\(env\)/);
+  assert.match(session, /const \{ session, items \} = await fetchCreateSession\(\)/);
   assert.match(refresh, /captchaUrl: captchaImageUrl/);
   assert.match(refresh, /captchaProxyUrl: captchaUrl\(\)/);
-  assert.match(submit, /if \(!isRepairSubmitEnabled\(env\)\)/);
+  assert.match(submit, /if \(FORWARD_TO_NTU && !isRepairSubmitEnabled\(env\)\)/);
+  assert.match(submit, /textValue\(incoming, "CapAns"\)\.length !== 5/);
   assert.match(submit, /"Latitude"/);
   assert.match(submit, /"Longitude"/);
   assert.match(submit, /"LocationNote"/);
@@ -121,7 +128,6 @@ test("uses native Cloudflare Pages structure", async () => {
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
-  await access(new URL("../src/assets/report-sample-road.jpg", import.meta.url));
 });
 
 test("prepares Cloudflare Pages static output", async () => {

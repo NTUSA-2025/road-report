@@ -174,7 +174,7 @@ textarea:focus-visible,
   font-weight: 650;
 }
 
-.header-view-button[aria-pressed="true"] {
+.header-view-button.is-return {
   border-color: var(--brand-ink);
   background: var(--brand);
   color: var(--brand-dark);
@@ -467,6 +467,41 @@ textarea:focus-visible,
   gap: 20px;
 }
 
+.contact-save-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--brand-border);
+  border-radius: 13px;
+  padding: 14px;
+  background: var(--brand-soft);
+  cursor: pointer;
+}
+
+.contact-save-option input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  accent-color: var(--brand-ink);
+}
+
+.contact-save-option strong,
+.contact-save-option small {
+  display: block;
+  line-height: 1.5;
+}
+
+.contact-save-option strong {
+  font-size: 0.85rem;
+}
+
+.contact-save-option small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .field-label input,
 .field-label select,
 .field-label textarea,
@@ -622,10 +657,10 @@ textarea:focus-visible,
 
 .overview-page {
   display: grid;
-  grid-template-rows: auto minmax(320px, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 18px;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   padding: 20px;
 }
 
@@ -652,6 +687,24 @@ textarea:focus-visible,
 .overview-summary strong {
   display: block;
   overflow-wrap: anywhere;
+}
+
+.overview-message {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+}
+
+.overview-message p {
+  margin: 0;
 }
 
 .overview-summary span {
@@ -689,12 +742,7 @@ textarea:focus-visible,
   border-radius: 24px;
 }
 
-.overview-report-panel {
-  position: absolute;
-  right: 12px;
-  bottom: 30px;
-  left: 12px;
-  z-index: 420;
+.overview-report-card {
   display: grid;
   grid-template-columns: 70px minmax(0, 1fr);
   align-items: center;
@@ -703,24 +751,40 @@ textarea:focus-visible,
   border-radius: 18px;
   padding: 14px;
   background: rgb(255 255 255 / 97%);
+}
+
+.overview-report-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 30px;
+  left: 12px;
+  z-index: 420;
   box-shadow: 0 8px 30px rgb(0 0 0 / 10%);
 }
 
-.overview-report-panel img {
+.overview-list {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.overview-report-card img {
   width: 70px;
   height: 90px;
   border-radius: 12px;
   object-fit: cover;
 }
 
-.overview-report-panel h2 {
+.overview-report-card h2 {
   margin: 7px 0 5px;
   font-size: 0.93rem;
   font-weight: 700;
   line-height: 1.5;
 }
 
-.overview-report-panel p {
+.overview-report-card p {
   display: -webkit-box;
   margin: 0;
   overflow: hidden;
@@ -729,15 +793,6 @@ textarea:focus-visible,
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-}
-
-.overview-report-panel strong {
-  display: block;
-  margin-top: 7px;
-  color: var(--muted);
-  font-size: 0.65rem;
-  font-weight: 500;
-  overflow-wrap: anywhere;
 }
 
 .overview-report-meta {
@@ -758,6 +813,35 @@ textarea:focus-visible,
   background: var(--brand-soft);
   color: var(--brand-dark);
   font-weight: 650;
+}
+
+.overview-view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 5px;
+  background: var(--surface);
+}
+
+.overview-view-switch button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.overview-view-switch button.is-active {
+  background: var(--brand);
+  color: var(--brand-dark);
 }
 
 .leaflet-container {
@@ -966,8 +1050,8 @@ textarea:focus-visible,
   .app-header h1 { font-size: 1.05rem; }
   .step-viewport, .overview-page { padding-right: 14px; padding-left: 14px; }
   .app-card { padding: 16px; }
-  .overview-report-panel { grid-template-columns: 52px minmax(0, 1fr); padding: 10px; gap: 9px; }
-  .overview-report-panel img { width: 52px; height: 76px; }
+  .overview-report-card { grid-template-columns: 52px minmax(0, 1fr); padding: 10px; gap: 9px; }
+  .overview-report-card img { width: 52px; height: 76px; }
 }
 
 @media (max-height: 740px) {

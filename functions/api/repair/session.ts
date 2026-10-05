@@ -1,5 +1,5 @@
 import { jsonResponse, methodNotAllowed } from "../../_lib/http";
-import { isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
+import { FORWARD_TO_NTU, isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
 import {
   appendRepairSessionCookie,
   captchaUrl,
@@ -20,7 +20,7 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
         captchaUrl: captchaImageUrl,
         captchaProxyUrl: captchaUrl(),
         items,
-        submitEnabled: isRepairSubmitEnabled(env),
+        submitEnabled: !FORWARD_TO_NTU || isRepairSubmitEnabled(env),
       },
       { headers },
     );
