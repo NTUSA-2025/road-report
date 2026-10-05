@@ -148,7 +148,6 @@ export function RoadReportApp() {
     error: "",
   });
   const [submitEnabled, setSubmitEnabled] = useState(false);
-  const [captchaRequired, setCaptchaRequired] = useState(true);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
   const [geoMessage, setGeoMessage] = useState("");
@@ -184,15 +183,13 @@ export function RoadReportApp() {
         }
 
         if (!ignore) {
-          setCaptchaRequired(payload.captchaRequired === true);
           setCaptcha({
-            ready: payload.captchaRequired === true,
+            ready: true,
             loading: false,
-            imageUrl: payload.captchaRequired ? cacheBustUrl(payload.captchaUrl) : "",
+            imageUrl: cacheBustUrl(payload.captchaUrl),
             error: "",
           });
           setSubmitEnabled(payload.submitEnabled === true);
-          setCurrentStep((step) => Math.min(step, payload.captchaRequired ? 4 : 3));
           if (Array.isArray(payload.items) && payload.items.length > 0) {
             setItems(payload.items);
           }
@@ -230,9 +227,8 @@ export function RoadReportApp() {
   const takenDate = photoMeta.takenAt ?? new Date();
   const selectedItemLabel =
     items.find((item) => item.value === itemId)?.label ?? "路面";
-  const steps = captchaRequired ? STEPS : STEPS.slice(0, -1);
-  const activeStep = steps[currentStep];
-  const isLastStep = currentStep === steps.length - 1;
+  const activeStep = STEPS[currentStep];
+  const isLastStep = currentStep === STEPS.length - 1;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -337,7 +333,7 @@ export function RoadReportApp() {
     const missing = firstMissingStep();
     if (missing != null) {
       setSubmitState("error");
-      setSubmitMessage(validateRequiredFields(missing) ?? `請先完成「${steps[missing].title}」再送出。`);
+      setSubmitMessage(validateRequiredFields(missing) ?? `請先完成「${STEPS[missing].title}」再送出。`);
       setCurrentStep(missing);
       return;
     }
@@ -361,9 +357,7 @@ export function RoadReportApp() {
     formData.set("LocationNote", locationNote);
     formData.set("BrokenItemId", itemId);
     formData.set("Reason", description);
-    if (captchaRequired) {
-      formData.set("CapAns", captchaAnswer.trim());
-    }
+    formData.set("CapAns", captchaAnswer.trim());
     formData.set("ImageTakenYear", `${takenDate.getFullYear()}`);
     formData.set("ImageTakenMonth", `${takenDate.getMonth() + 1}`);
     formData.set("ImageTakenDay", `${takenDate.getDate()}`);
@@ -391,15 +385,13 @@ export function RoadReportApp() {
           ? error.message
           : "送出時發生問題，請稍後再試。",
       );
-      if (captchaRequired) {
-        refreshCaptcha();
-      }
+      refreshCaptcha();
     }
   }
 
   function goToStep(step: number) {
     setSubmitMessage("");
-    setCurrentStep(Math.max(0, Math.min(step, steps.length - 1)));
+    setCurrentStep(Math.max(0, Math.min(step, STEPS.length - 1)));
   }
 
   function goNext() {
@@ -419,7 +411,7 @@ export function RoadReportApp() {
   }
 
   function firstMissingStep() {
-    for (let step = 0; step < steps.length; step += 1) {
+    for (let step = 0; step < STEPS.length; step += 1) {
       if (validateRequiredFields(step)) {
         return step;
       }
@@ -457,7 +449,7 @@ export function RoadReportApp() {
       return "請先填寫聯絡電話。";
     }
 
-    if (captchaRequired && step === 4 && captchaAnswer.trim().length !== 5) {
+    if (step === 4 && captchaAnswer.trim().length !== 5) {
       return "請輸入 5 碼驗證碼。";
     }
 
@@ -503,7 +495,7 @@ export function RoadReportApp() {
         ) : (
           <>
             <nav className="step-tabs" aria-label="回報步驟">
-          {steps.map((step, index) => (
+          {STEPS.map((step, index) => (
             <button
               aria-current={currentStep === index ? "step" : undefined}
               className="step-tab"
@@ -703,7 +695,7 @@ export function RoadReportApp() {
               </section>
             ) : null}
 
-            {captchaRequired && currentStep === 4 ? (
+            {currentStep === 4 ? (
               <section className="app-card captcha-card" aria-label="驗證碼">
                 <div className="card-title">
                   <span>5</span>
@@ -767,7 +759,7 @@ export function RoadReportApp() {
             {isLastStep ? (
               <button
                 className="submit-button"
-                disabled={submitState === "submitting" || submitState === "success" || (captchaRequired && captcha.loading) || !submitEnabled}
+                disabled={submitState === "submitting" || submitState === "success" || captcha.loading || !submitEnabled}
                 type="submit"
               >
                 <Send aria-hidden="true" size={18} strokeWidth={2.5} />

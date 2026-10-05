@@ -9,10 +9,6 @@ import {
 import type { PagesContext } from "../../_lib/types";
 
 export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv>) {
-  if (!FORWARD_TO_NTU) {
-    return jsonResponse({ captchaRequired: false, items: [], submitEnabled: true });
-  }
-
   try {
     const { session, items } = await fetchCreateSession();
     const captchaImageUrl = await fetchCaptchaImageDataUrl(session);
@@ -23,9 +19,8 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
       {
         captchaUrl: captchaImageUrl,
         captchaProxyUrl: captchaUrl(),
-        captchaRequired: true,
         items,
-        submitEnabled: isRepairSubmitEnabled(env),
+        submitEnabled: !FORWARD_TO_NTU || isRepairSubmitEnabled(env),
       },
       { headers },
     );

@@ -15,7 +15,7 @@
 - 手機拍照按鈕位於照片區中下方，使用 `capture="environment"`
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
-- 送往 NTU 時以 proxy 圖片顯示 captcha，使用者手動輸入後送出；目前資料庫模式略過此步驟
+- Captcha 以 proxy 圖片顯示，使用者手動輸入 5 碼；目前資料庫模式仍顯示與要求輸入，但不送往 NTU 驗證
 - 位置送出使用必填的 `LocationNote`、`Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`（例：`傅鐘前方柏油路：25.017340, 121.539750`）
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期與 `CapAns`
 - 學校接受報修後，把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
@@ -96,7 +96,7 @@ npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.s
 
 `wrangler.local.jsonc` 只供本機 D1 建表使用，其中 `database_id` 是固定的本機識別值，不是正式資源 ID。正式與 Preview binding 仍由 Dashboard 管理。
 
-目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：直接寫入 D1、R2、KV，沿用 `submitted` 狀態，**不會向學校取得 session、顯示或檢查 captcha，也不會 POST 到學校表單**。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會使用學校 session、captcha 與 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
+目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：仍取得學校 session、顯示 captcha 並要求輸入 5 碼，但**不把報修表單 POST 到學校，也不向學校驗證答案**；回報直接寫入 D1、R2、KV，沿用 `submitted` 狀態。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會轉送學校並由 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
 
 一般模式只在 NTU 表單接受送出後儲存。D1、R2、KV binding 或資料表缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 D1、R2 或 KV。
 
