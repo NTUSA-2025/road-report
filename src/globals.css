@@ -784,15 +784,6 @@ textarea:focus-visible,
   -webkit-line-clamp: 2;
 }
 
-.overview-report-panel strong {
-  display: block;
-  margin-top: 7px;
-  color: var(--muted);
-  font-size: 0.65rem;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
 .overview-report-meta {
   display: flex;
   flex-wrap: wrap;

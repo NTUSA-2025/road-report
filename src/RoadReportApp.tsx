@@ -870,7 +870,6 @@ function ReportOverview({
               </div>
               <h2>{selectedReport.title}</h2>
               <p>{selectedReport.description}</p>
-              <strong>{formatCoordinateValue(selectedReport.coordinates)}</strong>
             </div>
           </article>
         </div>
