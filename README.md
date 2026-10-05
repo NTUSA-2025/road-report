@@ -15,7 +15,7 @@
 - 手機拍照按鈕位於照片區中下方，使用 `capture="environment"`
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
-- Captcha 以 proxy 圖片呈現在本站，使用者手動輸入後送出
+- 送往 NTU 時以 proxy 圖片顯示 captcha，使用者手動輸入後送出；目前資料庫模式略過此步驟
 - 位置送出使用必填的 `LocationNote`、`Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`（例：`傅鐘前方柏油路：25.017340, 121.539750`）
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期與 `CapAns`
 - 學校接受報修後，把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
@@ -81,7 +81,7 @@ Pages Functions 使用的 Dashboard binding **變數名稱**如下。名稱須�
 
 D1 建表 SQL 在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)。首次啟用送出前，需將它套用到對應環境的 D1 資料庫；**部署網站不會自動建表**。可在 Cloudflare Dashboard 的 D1 Console 執行該檔 SQL，或使用 `npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.sql`。這裡的 `road-report-db` 是資料庫名稱，若 Dashboard 中實際資料庫名稱不同，請替換為實際名稱。套用 Production SQL 前請確認目標資料庫。
 
-目前 `functions/api/repair/submit.ts` 的寫死開關 `FORWARD_TO_NTU = false` 為測試模式：送出會寫入 D1、R2、KV，並沿用 `submitted` 狀態，但**不會 POST 到學校表單**。之後將開關改為 `true` 時，測試期間記錄的回報不會自動補送。若 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 設為 `false`，整個送出功能仍會停用，測試本站儲存時需設為 `true`。
+目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：直接寫入 D1、R2、KV，沿用 `submitted` 狀態，**不會向學校取得 session、顯示或檢查 captcha，也不會 POST 到學校表單**。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會使用學校 session、captcha 與 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
 
 一般模式只在 NTU 表單接受送出後儲存。D1、R2、KV binding 或資料表缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 D1、R2 或 KV。
 

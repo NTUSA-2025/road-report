@@ -1,5 +1,5 @@
 import { jsonResponse, methodNotAllowed } from "../../_lib/http";
-import { isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
+import { FORWARD_TO_NTU, isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
 import {
   appendRepairSessionCookie,
   createPath,
@@ -10,10 +10,6 @@ import {
 import { checkReportSchema, reportStorage, saveReport, type ReportStorageEnv } from "../../_lib/report-storage";
 import type { PagesContext } from "../../_lib/types";
 
-// Test mode: records new reports locally without sending them to NTU.
-// Turning this on later does not replay reports recorded while it was off.
-const FORWARD_TO_NTU = false;
-
 const REQUIRED_FIELDS = [
   "ApplicantPhone",
   "Latitude",
@@ -21,34 +17,25 @@ const REQUIRED_FIELDS = [
   "LocationNote",
   "BrokenItemId",
   "Reason",
-  "CapAns",
 ];
 
 export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv & ReportStorageEnv>) {
-  if (!isRepairSubmitEnabled(env)) {
+  if (FORWARD_TO_NTU && !isRepairSubmitEnabled(env)) {
     return jsonResponse(
       { error: "報修送出目前暫停開放，驗證碼與表單仍可先準備。" },
       { status: 403 },
     );
   }
 
-  const session = readRepairSession(request);
-
-  if (!session) {
-    return jsonResponse(
-      { error: "驗證碼工作階段已過期，請重新整理頁面後再送出。" },
-      { status: 440 },
-    );
-  }
-
   const incoming = await request.formData();
-  const missing = REQUIRED_FIELDS.find((field) => !`${incoming.get(field) ?? ""}`.trim());
+  const missing = REQUIRED_FIELDS.find((field) => !`${incoming.get(field) ?? ""}`.trim()) ||
+    (FORWARD_TO_NTU && !textValue(incoming, "CapAns") ? "CapAns" : "");
   const image = incoming.get("ImageFiles");
   const coordinates = coordinatesValue(incoming);
 
   if (missing || !coordinates || !(image instanceof File) || image.size === 0) {
     return jsonResponse(
-      { error: "請確認必填欄位、經緯度、照片與驗證碼都已填寫。" },
+      { error: "請確認必填欄位、經緯度與照片都已填寫。" },
       { status: 400 },
     );
   }
@@ -76,6 +63,15 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
         { status: 500 },
       );
     }
+  }
+
+  const session = readRepairSession(request);
+
+  if (!session) {
+    return jsonResponse(
+      { error: "驗證碼工作階段已過期，請重新整理頁面後再送出。" },
+      { status: 440 },
+    );
   }
 
   const upstream = new FormData();

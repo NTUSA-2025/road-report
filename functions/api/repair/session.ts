@@ -1,5 +1,5 @@
 import { jsonResponse, methodNotAllowed } from "../../_lib/http";
-import { isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
+import { FORWARD_TO_NTU, isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
 import {
   appendRepairSessionCookie,
   captchaUrl,
@@ -9,6 +9,10 @@ import {
 import type { PagesContext } from "../../_lib/types";
 
 export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv>) {
+  if (!FORWARD_TO_NTU) {
+    return jsonResponse({ captchaRequired: false, items: [], submitEnabled: true });
+  }
+
   try {
     const { session, items } = await fetchCreateSession();
     const captchaImageUrl = await fetchCaptchaImageDataUrl(session);
@@ -19,6 +23,7 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
       {
         captchaUrl: captchaImageUrl,
         captchaProxyUrl: captchaUrl(),
+        captchaRequired: true,
         items,
         submitEnabled: isRepairSubmitEnabled(env),
       },
