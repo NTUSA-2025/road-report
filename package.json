@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:pages": "npm run build && wrangler pages dev dist --env-file=.env --compatibility-date=2026-05-22",
+    "dev:pages": "npm run build && wrangler pages dev dist --env-file=.env --compatibility-date=2026-09-14 --compatibility-flags=nodejs_compat",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

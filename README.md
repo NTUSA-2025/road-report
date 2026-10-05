@@ -65,13 +65,12 @@ Cloudflare Pages 設定：
 - Project name: `road-report`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Wrangler config: `wrangler.toml`
-- Secret: `CARTO_API_KEY`
+- 在 Cloudflare Pages Dashboard 管理專案設定與資源 binding
+- Production 與 Preview 分別設定 `CARTO_API_KEY`、`REPAIR_SUBMIT_ENABLED`，以及需要使用的 KV、D1、R2 binding
+- Compatibility date: `2026-09-14`；Compatibility flag: `nodejs_compat`
 
 `npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
 
-`wrangler.toml` 會把 `CARTO_API_KEY` 宣告成 required secret。請在 Cloudflare Pages 對應環境設定 secret 後重新部署；若 production 與 preview 都會用地圖，兩個環境都需要設定。
-
-未來若要接 Cloudflare D1、KV 或 R2，先建立正式/preview 資源，再把 `wrangler.toml` 內的範例 binding 取消註解並填入實際 ID。
+本站不將 Cloudflare 資源 ID 寫入公開 repo。Pages 專案設定與 KV、D1、R2 binding 由 Dashboard 管理；新增或調整 binding 後需重新部署。`CARTO_API_KEY` 的值也只放在 Dashboard secret 與本機未追蹤的 `.env`。
 
 本專案刻意不自動破解 captcha，只把 NTU 原表單的 captcha 接到本站顯示，仍由使用者辨識輸入。

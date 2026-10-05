@@ -12,14 +12,13 @@ test("builds the road report app shell", async () => {
 });
 
 test("uses native Cloudflare Pages structure", async () => {
-  const [app, main, html, packageJson, css, favicon, wrangler, viteConfig, envExample, viteEnv, ntu, flags, session, refresh, submit, tile] = await Promise.all([
+  const [app, main, html, packageJson, css, favicon, viteConfig, envExample, viteEnv, ntu, flags, session, refresh, submit, tile] = await Promise.all([
     readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../src/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/favicon.png", import.meta.url)),
-    readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../src/vite-env.d.ts", import.meta.url), "utf8"),
@@ -78,7 +77,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(packageJson, /"leaflet"/);
   assert.match(packageJson, /"@types\/leaflet"/);
   assert.match(packageJson, /"lucide-react"/);
-  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-05-22"/);
+  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-09-14 --compatibility-flags=nodejs_compat"/);
   assert.match(css, /@import "leaflet\/dist\/leaflet\.css"/);
   assert.match(css, /\.leaflet-report-marker/);
   assert.match(css, /\.leaflet-overview-marker/);
@@ -90,12 +89,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.deepEqual(favicon.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   assert.match(html, /href="\/favicon.png"/);
   assert.match(html, /href="\/favicon.ico"/);
-  assert.match(wrangler, /name = "road-report"/);
-  assert.match(wrangler, /pages_build_output_dir = "\.\/dist"/);
-  assert.match(wrangler, /compatibility_date = "2026-09-14"/);
-  assert.match(wrangler, /compatibility_flags = \["nodejs_compat"\]/);
-  assert.match(wrangler, /\[secrets\]/);
-  assert.match(wrangler, /required = \["CARTO_API_KEY", "REPAIR_SUBMIT_ENABLED"\]/);
+  await assert.rejects(access(new URL("../wrangler.toml", import.meta.url)));
   assert.match(viteConfig, /@vitejs\/plugin-react/);
   assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
   assert.match(ntu, /fetchCreateSession/);
