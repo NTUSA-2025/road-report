@@ -4,6 +4,7 @@ import {
   Camera,
   Check,
   LocateFixed,
+  List,
   MapPin,
   MapPinned,
   Minus,
@@ -827,9 +828,9 @@ function ReportOverview({
   items,
   onRetry,
 }: OverviewState & { items: RepairItem[]; onRetry: () => void }) {
+  const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
   const selectedReport = reports.find((report) => report.id === selectedId) ?? reports[0];
-  const selectedItemLabel = items.find((item) => item.value === selectedReport?.itemId)?.label;
 
   return (
     <section className="overview-page" aria-label="回報狀況總覽">
@@ -839,7 +840,7 @@ function ReportOverview({
           <strong>{total}</strong>
         </div>
         <div>
-          <span>地圖顯示</span>
+          <span>顯示件數</span>
           <strong>{reports.length}</strong>
         </div>
         <div>
@@ -853,28 +854,73 @@ function ReportOverview({
           <p>{loading ? "載入回報中..." : error || "目前還沒有回報資料。"}</p>
           {error ? <button className="soft-button" onClick={onRetry} type="button">重試</button> : null}
         </div>
-      ) : (
+      ) : viewMode === "map" ? (
         <div className="overview-map-shell">
           <ReportOverviewMap
             reports={reports}
             selectedId={selectedReport.id}
             onSelect={setSelectedId}
           />
-          <article className="overview-report-panel" aria-live="polite">
-            <img alt={`${selectedReport.title}照片`} loading="lazy" src={selectedReport.photoUrl} />
-            <div>
-              <div className="overview-report-meta">
-                <span>{selectedReport.status}</span>
-                {selectedItemLabel ? <span>{formatRepairItemLabel(selectedItemLabel)}</span> : null}
-                <span>{formatReportDate(selectedReport.reportedAt)}</span>
-              </div>
-              <h2>{selectedReport.title}</h2>
-              <p>{selectedReport.description}</p>
-            </div>
-          </article>
+          <OverviewReportCard className="overview-report-panel" report={selectedReport} items={items} live />
         </div>
+      ) : (
+        <section className="overview-list" aria-label="回報列表">
+          {reports.map((report) => (
+            <OverviewReportCard className="overview-list-card" key={report.id} report={report} items={items} />
+          ))}
+        </section>
       )}
+
+      <nav className="overview-view-switch" aria-label="總覽顯示模式">
+        <button
+          aria-pressed={viewMode === "map"}
+          className={viewMode === "map" ? "is-active" : ""}
+          onClick={() => setViewMode("map")}
+          type="button"
+        >
+          <MapPinned aria-hidden="true" size={18} />
+          地圖模式
+        </button>
+        <button
+          aria-pressed={viewMode === "list"}
+          className={viewMode === "list" ? "is-active" : ""}
+          onClick={() => setViewMode("list")}
+          type="button"
+        >
+          <List aria-hidden="true" size={18} />
+          列表模式
+        </button>
+      </nav>
     </section>
+  );
+}
+
+function OverviewReportCard({
+  report,
+  items,
+  className,
+  live = false,
+}: {
+  report: ReportSummary;
+  items: RepairItem[];
+  className: string;
+  live?: boolean;
+}) {
+  const itemLabel = items.find((item) => item.value === report.itemId)?.label;
+
+  return (
+    <article aria-live={live ? "polite" : undefined} className={`overview-report-card ${className}`}>
+      <img alt={`${report.title}照片`} loading="lazy" src={report.photoUrl} />
+      <div>
+        <div className="overview-report-meta">
+          <span>{report.status}</span>
+          {itemLabel ? <span>{formatRepairItemLabel(itemLabel)}</span> : null}
+          <span>{formatReportDate(report.reportedAt)}</span>
+        </div>
+        <h2>{report.title}</h2>
+        <p>{report.description}</p>
+      </div>
+    </article>
   );
 }
 
