@@ -34,6 +34,8 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(html, /\/src\/main\.tsx/);
   assert.match(app, /from "lucide-react"/);
   assert.match(app, /MapPinned/);
+  assert.match(app, /<ArrowLeft aria-hidden="true" size=\{18\} strokeWidth=\{2\.4\} \/>/);
+  assert.match(app, /返回回報頁面/);
   assert.match(app, /fetch\("\/api\/reports"/);
   assert.doesNotMatch(app, /SAMPLE_REPORTS/);
   assert.match(app, /function ReportOverview/);

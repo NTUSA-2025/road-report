@@ -174,7 +174,7 @@ textarea:focus-visible,
   font-weight: 650;
 }
 
-.header-view-button[aria-pressed="true"] {
+.header-view-button.is-return {
   border-color: var(--brand-ink);
   background: var(--brand);
   color: var(--brand-dark);

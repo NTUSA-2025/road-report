@@ -499,13 +499,17 @@ export function RoadReportApp() {
           </div>
           <div className="header-actions">
             <button
-              aria-pressed={appView === "overview"}
-              className="header-view-button"
+              aria-label={appView === "overview" ? "返回回報頁面" : "開啟回報總覽"}
+              className={`header-view-button ${appView === "overview" ? "is-return" : ""}`}
               onClick={() => setAppView((current) => (current === "overview" ? "report" : "overview"))}
               type="button"
             >
-              <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
-              {appView === "overview" ? "回報" : "總覽"}
+              {appView === "overview" ? (
+                <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
+              ) : (
+                <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
+              )}
+              {appView === "overview" ? "返回回報" : "總覽"}
             </button>
           </div>
         </header>
