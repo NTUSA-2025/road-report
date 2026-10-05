@@ -9,7 +9,8 @@
 3. 本站將 NTU session 資訊存在 HttpOnly cookie `rr_ntu_repair`。
 4. 前端透過 `/api/repair/captcha` 顯示 NTU captcha 圖片，使用者手動輸入答案。
 5. 前端送出 `POST /api/repair/submit`。
-6. Pages Function 讀取 `rr_ntu_repair`，組成 multipart `FormData` 後轉送到 NTU `PublicRepair/Create`。
+6. 正式送出流程中，Pages Function 讀取 `rr_ntu_repair`，組成 multipart `FormData` 後轉送到 NTU `PublicRepair/Create`。
+7. NTU 接受送出後，本站將回報欄位寫入 D1、照片寫入 R2，並在 KV 建立報修索引。
 
 ## 前端到本站 API
 
@@ -20,6 +21,7 @@
 | `ApplicantName` | 聯絡步驟姓名欄位 | 否 | 申請人姓名，可留空。 |
 | `ApplicantPhone` | 聯絡步驟電話欄位 | 是 | NTU 表單必填電話。 |
 | `ApplicantEmail` | 聯絡步驟 email 欄位 | 否 | 申請人 email，可留空。 |
+| `SaveContactInfo` | 聯絡步驟儲存開關 | 否 | 預設 `false`；只決定本站是否儲存姓名、電話與 email，不影響送給 NTU 的值。 |
 | `Location` | 位置步驟經緯度 | 否 | 前端仍可送此欄位相容舊流程，但本站後端不信任此值；實際送往 NTU 的 `Location` 由 `LocationNote`、`Latitude`、`Longitude` 產生。 |
 | `LocationNote` | 位置步驟附註 | 是 | 補充附近地標或路面位置；送往 NTU 時放在座標前。 |
 | `BrokenItemId` | 現況步驟報修類型 | 是 | 選項來自 NTU 表單 `BrokenItemId`；連線失敗時使用本站 fallback 選項。 |
@@ -59,6 +61,7 @@
 | `Latitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
 | `Longitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
 | `LocationNote` | 必填的位置附註，與座標合併成 NTU `Location`；不作為獨立 NTU 欄位。 |
+| `SaveContactInfo` | 只供本站儲存流程使用；關閉時 D1 的 `applicant_name`、`applicant_phone`、`applicant_email` 均存 `opt-out`。 |
 | `photoMeta.coordinates` | 前端狀態，用於從照片 EXIF 更新地圖位置。 |
 | `captchaUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，主要為後端即時抓取 NTU captcha 後轉成的 `data:` 圖片 URL。 |
 | `captchaProxyUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，保留本站 captcha proxy URL 作為除錯與備援。 |
@@ -71,6 +74,10 @@
 | `__RequestVerificationToken` | NTU `PublicRepair/Create` hidden input | `rr_ntu_repair.requestVerificationToken` | NTU 表單 CSRF 驗證。 |
 | `CapId` | NTU `PublicRepair/Create` hidden input，或 `/repairservice2/Captcha/Change` response | `rr_ntu_repair.capId` | 後端用同一組 NTU cookies 取得對應 captcha 圖片，並在送出時與 `CapAns` 一起送回 NTU。 |
 | `CapAns` | 使用者輸入 | 不保存，只在送出時轉送 | NTU captcha 答案。 |
+
+## 本站儲存
+
+表結構見 [`migrations/0001_reports.sql`](../migrations/0001_reports.sql)。D1 儲存回報時間、項目、描述、位置附註與座標、照片拍攝日期、R2 key 與照片資訊，以及依開關處理後的聯絡欄位。`school_case_number` 預留為可空欄位；目前不擷取或寫入學校案號。R2 儲存原始照片；KV 的 `report:{id}` 僅含本站報修 ID、建立時間與 `submitted` 狀態。總覽目前仍使用假資料，沒有從 D1 讀取回報。
 
 ## 目前必填檢查
 

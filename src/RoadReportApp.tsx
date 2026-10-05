@@ -139,6 +139,7 @@ export function RoadReportApp() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [saveContactInfo, setSaveContactInfo] = useState(false);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captcha, setCaptcha] = useState<CaptchaState>({
     ready: false,
@@ -351,6 +352,7 @@ export function RoadReportApp() {
     formData.set("ApplicantName", name);
     formData.set("ApplicantPhone", phone);
     formData.set("ApplicantEmail", email);
+    formData.set("SaveContactInfo", String(saveContactInfo));
     formData.set("Location", formatCoordinateValue(coords));
     formData.set("LocationNote", locationNote);
     formData.set("BrokenItemId", itemId);
@@ -678,6 +680,18 @@ export function RoadReportApp() {
                     />
                   </label>
                 </div>
+
+                <label className="contact-save-option">
+                  <input
+                    checked={saveContactInfo}
+                    onChange={(event) => setSaveContactInfo(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>
+                    <strong>允許本站儲存聯絡資訊</strong>
+                    <small>關閉時，本站將以「opt-out」代替姓名、電話與 E-mail；此選項不更動你填寫的聯絡資訊。</small>
+                  </span>
+                </label>
               </section>
             ) : null}
 
@@ -748,7 +762,7 @@ export function RoadReportApp() {
             {isLastStep ? (
               <button
                 className="submit-button"
-                disabled={submitState === "submitting" || captcha.loading || !submitEnabled}
+                disabled={submitState === "submitting" || submitState === "success" || captcha.loading || !submitEnabled}
                 type="submit"
               >
                 <Send aria-hidden="true" size={18} strokeWidth={2.5} />

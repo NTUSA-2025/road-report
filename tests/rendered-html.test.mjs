@@ -64,7 +64,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
   assert.match(app, /setSubmitEnabled\(payload\.submitEnabled === true\)/);
   assert.match(app, /報修送出目前暫停開放，驗證碼仍會正常載入。/);
-  assert.match(app, /disabled=\{submitState === "submitting" \|\| captcha\.loading \|\| !submitEnabled\}/);
+  assert.match(app, /disabled=\{submitState === "submitting" \|\| submitState === "success" \|\| captcha\.loading \|\| !submitEnabled\}/);
   assert.match(app, /url\.startsWith\("data:"\)/);
   assert.match(app, /const separator = url\.includes\("\?"\) \? "&" : "\?"/);
   assert.doesNotMatch(app, /captchaUrl\}&v=/);

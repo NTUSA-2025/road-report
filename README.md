@@ -18,6 +18,8 @@
 - Captcha 以 proxy 圖片呈現在本站，使用者手動輸入後送出
 - 位置送出使用必填的 `LocationNote`、`Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`（例：`傅鐘前方柏油路：25.017340, 121.539750`）
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期與 `CapAns`
+- 學校接受報修後，把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
+- 聯絡步驟可選擇是否讓本站儲存姓名、電話與 E-mail；預設關閉，關閉時 D1 的三個欄位均存 `opt-out`
 
 ## 介面配色
 
@@ -68,6 +70,20 @@ Cloudflare Pages 設定：
 - 在 Cloudflare Pages Dashboard 管理專案設定與資源 binding
 - Production 與 Preview 分別設定 `CARTO_API_KEY`、`REPAIR_SUBMIT_ENABLED`，以及需要使用的 KV、D1、R2 binding
 - Compatibility date: `2026-09-14`；Compatibility flag: `nodejs_compat`
+
+Pages Functions 使用的 Dashboard binding **變數名稱**如下。名稱須完全一致，且 Production、Preview 都要設定：
+
+| 類型 | 變數名稱 | 用途 |
+| --- | --- | --- |
+| D1 | `road-report-db` | `reports` 表，儲存回報內容與照片索引；`school_case_number` 欄位預留給學校案號。 |
+| R2 | `road-report-r2` | 以 `reports/{id}/photo` 為 key 儲存原始照片。 |
+| KV | `ROAD_REPORT_KV` | 以 `report:{id}` 為 key 儲存不含聯絡資訊的報修狀態索引。 |
+
+D1 建表 SQL 在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)。首次啟用送出前，需將它套用到對應環境的 D1 資料庫；**部署網站不會自動建表**。可在 Cloudflare Dashboard 的 D1 Console 執行該檔 SQL，或使用 `npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.sql`。這裡的 `road-report-db` 是資料庫名稱，若 Dashboard 中實際資料庫名稱不同，請替換為實際名稱。套用 Production SQL 前請確認目標資料庫。
+
+目前 `functions/api/repair/submit.ts` 的寫死開關 `FORWARD_TO_NTU = false` 為測試模式：送出會寫入 D1、R2、KV，並沿用 `submitted` 狀態，但**不會 POST 到學校表單**。之後將開關改為 `true` 時，測試期間記錄的回報不會自動補送。若 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 設為 `false`，整個送出功能仍會停用，測試本站儲存時需設為 `true`。
+
+一般模式只在 NTU 表單接受送出後儲存。D1、R2、KV binding 或資料表缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 D1、R2 或 KV。
 
 `npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
 

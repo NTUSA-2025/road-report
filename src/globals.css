@@ -467,6 +467,41 @@ textarea:focus-visible,
   gap: 20px;
 }
 
+.contact-save-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--brand-border);
+  border-radius: 13px;
+  padding: 14px;
+  background: var(--brand-soft);
+  cursor: pointer;
+}
+
+.contact-save-option input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  accent-color: var(--brand-ink);
+}
+
+.contact-save-option strong,
+.contact-save-option small {
+  display: block;
+  line-height: 1.5;
+}
+
+.contact-save-option strong {
+  font-size: 0.85rem;
+}
+
+.contact-save-option small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .field-label input,
 .field-label select,
 .field-label textarea,

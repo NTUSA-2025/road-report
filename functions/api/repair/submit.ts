@@ -7,7 +7,12 @@ import {
   mergeCookieHeaders,
   readRepairSession,
 } from "../../_lib/ntu";
+import { checkReportSchema, reportStorage, saveReport, type ReportStorageEnv } from "../../_lib/report-storage";
 import type { PagesContext } from "../../_lib/types";
+
+// Test mode: records new reports locally without sending them to NTU.
+// Turning this on later does not replay reports recorded while it was off.
+const FORWARD_TO_NTU = false;
 
 const REQUIRED_FIELDS = [
   "ApplicantPhone",
@@ -19,7 +24,7 @@ const REQUIRED_FIELDS = [
   "CapAns",
 ];
 
-export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv>) {
+export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv & ReportStorageEnv>) {
   if (!isRepairSubmitEnabled(env)) {
     return jsonResponse(
       { error: "報修送出目前暫停開放，驗證碼與表單仍可先準備。" },
@@ -46,6 +51,31 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
       { error: "請確認必填欄位、經緯度、照片與驗證碼都已填寫。" },
       { status: 400 },
     );
+  }
+
+  let storage: ReturnType<typeof reportStorage>;
+  try {
+    storage = reportStorage(env);
+    await checkReportSchema(storage.database);
+  } catch (error) {
+    console.error("Report storage is unavailable", error);
+    return jsonResponse(
+      { error: "本站資料儲存功能尚未準備好，請稍後再送出。" },
+      { status: 503 },
+    );
+  }
+
+  if (!FORWARD_TO_NTU) {
+    try {
+      const id = await saveReport(storage, incoming, image);
+      return jsonResponse({ id, message: "已送出回報。" });
+    } catch (error) {
+      console.error("Failed to save test report", error);
+      return jsonResponse(
+        { error: "送出失敗，請稍後再試。" },
+        { status: 500 },
+      );
+    }
   }
 
   const upstream = new FormData();
@@ -79,42 +109,52 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
 
   const location = ntuResponse.headers.get("location") ?? "";
 
-  if (ntuResponse.status >= 300 && ntuResponse.status < 400) {
+  const redirected = ntuResponse.status >= 300 && ntuResponse.status < 400;
+
+  if (!redirected) {
+    const html = await ntuResponse.text();
+    const validationError = extractValidationError(html);
+
+    if (!ntuResponse.ok || validationError) {
+      const fresh = await fetchCreateSession().catch(() => null);
+      const headers = new Headers();
+
+      if (fresh) {
+        appendRepairSessionCookie(headers, request, fresh.session);
+      } else {
+        appendRepairSessionCookie(headers, request, {
+          ...session,
+          cookies: mergeCookieHeaders(session.cookies, ntuResponse),
+        });
+      }
+
+      return jsonResponse(
+        {
+          error:
+            validationError ||
+            "NTU 表單沒有接受這次送出，請檢查欄位或重新輸入驗證碼。",
+        },
+        { status: 422, headers },
+      );
+    }
+  }
+
+  try {
+    const id = await saveReport(storage, incoming, image);
     return jsonResponse({
-      message: "NTU 報修表單已接受送出，請留意通知信或後續查詢頁。",
-      redirect: location,
+      id,
+      message: redirected
+        ? "NTU 報修表單已接受送出，請留意通知信或後續查詢頁。"
+        : "已送出到 NTU 報修表單。",
+      ...(redirected ? { redirect: location } : {}),
+    });
+  } catch (error) {
+    console.error("NTU accepted report, but local save failed", error);
+    return jsonResponse({
+      message: "學校已收到報修，但本站未能保存回報資料。請勿重複送出。",
+      ...(redirected ? { redirect: location } : {}),
     });
   }
-
-  const html = await ntuResponse.text();
-  const validationError = extractValidationError(html);
-
-  if (!ntuResponse.ok || validationError) {
-    const fresh = await fetchCreateSession().catch(() => null);
-    const headers = new Headers();
-
-    if (fresh) {
-      appendRepairSessionCookie(headers, request, fresh.session);
-    } else {
-      appendRepairSessionCookie(headers, request, {
-        ...session,
-        cookies: mergeCookieHeaders(session.cookies, ntuResponse),
-      });
-    }
-
-    return jsonResponse(
-      {
-        error:
-          validationError ||
-          "NTU 表單沒有接受這次送出，請檢查欄位或重新輸入驗證碼。",
-      },
-      { status: 422, headers },
-    );
-  }
-
-  return jsonResponse({
-    message: "已送出到 NTU 報修表單。",
-  });
 }
 
 export function onRequestGet() {
