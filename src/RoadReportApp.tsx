@@ -135,10 +135,10 @@ export function RoadReportApp() {
   });
   const [description, setDescription] = useState("");
   const [itemId, setItemId] = useState("5");
+  const [locationNote, setLocationNote] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [moreInfo, setMoreInfo] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captcha, setCaptcha] = useState<CaptchaState>({
     ready: false,
@@ -276,12 +276,6 @@ export function RoadReportApp() {
     const meta = await readPhotoMeta(file);
     setPhotoMeta(meta);
 
-    const nextTakenAt = meta.takenAt ?? new Date(file.lastModified);
-    setMoreInfo((current) => {
-      const stamp = formatDateForText(nextTakenAt);
-      return current || `照片拍攝/選取時間：${stamp}`;
-    });
-
     if (meta.coordinates) {
       updateCoords({ ...meta.coordinates, source: "photo" });
     }
@@ -358,9 +352,9 @@ export function RoadReportApp() {
     formData.set("ApplicantPhone", phone);
     formData.set("ApplicantEmail", email);
     formData.set("Location", formatCoordinateValue(coords));
+    formData.set("LocationNote", locationNote);
     formData.set("BrokenItemId", itemId);
     formData.set("Reason", description);
-    formData.set("ImageDescription", moreInfo);
     formData.set("CapAns", captchaAnswer.trim());
     formData.set("ImageTakenYear", `${takenDate.getFullYear()}`);
     formData.set("ImageTakenMonth", `${takenDate.getMonth() + 1}`);
@@ -439,8 +433,14 @@ export function RoadReportApp() {
       }
     }
 
-    if (step === 2 && !hasValidCoordinates(coords)) {
-      return "請先確認有效的經緯度位置。";
+    if (step === 2) {
+      if (!hasValidCoordinates(coords)) {
+        return "請先確認有效的經緯度位置。";
+      }
+
+      if (!locationNote.trim()) {
+        return "請先填寫位置附註。";
+      }
     }
 
     if (step === 3 && !phone.trim()) {
@@ -608,28 +608,31 @@ export function RoadReportApp() {
                     value={description}
                   />
                 </label>
-
-                <label className="field-label">
-                  相片補充
-                  <input
-                    onChange={(event) => setMoreInfo(event.target.value)}
-                    placeholder="可補充照片角度、附近地標"
-                    type="text"
-                    value={moreInfo}
-                  />
-                </label>
               </section>
             ) : null}
 
             {currentStep === 2 ? (
-              <section className="location-card" aria-label="位置">
-                <LowInterferenceMap
-                  coords={coords}
-                  onChange={handleMapChange}
-                  onLocate={handleLocate}
-                />
-                {geoMessage ? <p className="map-status" role="status">{geoMessage}</p> : null}
-              </section>
+              <div className="location-step">
+                <section className="location-card" aria-label="位置">
+                  <LowInterferenceMap
+                    coords={coords}
+                    onChange={handleMapChange}
+                    onLocate={handleLocate}
+                  />
+                  {geoMessage ? <p className="map-status" role="status">{geoMessage}</p> : null}
+                </section>
+                <label className="field-label">
+                  位置附註
+                  <input
+                    maxLength={100}
+                    onChange={(event) => setLocationNote(event.target.value)}
+                    placeholder="例：傅鐘前方柏油路"
+                    required
+                    type="text"
+                    value={locationNote}
+                  />
+                </label>
+              </div>
             ) : null}
 
             {currentStep === 3 ? (
@@ -1318,14 +1321,6 @@ function cacheBustUrl(url: string) {
 
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}v=${Date.now()}`;
-}
-
-function formatDateForText(date: Date) {
-  return new Intl.DateTimeFormat("zh-TW", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
 }
 
 async function readPhotoMeta(file: File): Promise<PhotoMeta> {

@@ -53,10 +53,14 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.doesNotMatch(app, /照片座標/);
   assert.doesNotMatch(app, /stage-topbar|photo-meta|需要照片|拍攝日期|位置資訊/);
   assert.doesNotMatch(app, /<strong>\{coordinateLabel\}<\/strong>/);
-  assert.doesNotMatch(app, /setLocation|formatLocation|報修地點/);
+  assert.doesNotMatch(app, /setLocation(?!Note)|formatLocation|報修地點/);
   assert.match(app, /formatCoordinateValue\(coords\)/);
   assert.match(app, /formData\.set\("Latitude", coords\.lat\.toFixed\(6\)\)/);
   assert.match(app, /formData\.set\("Longitude", coords\.lng\.toFixed\(6\)\)/);
+  assert.match(app, /formData\.set\("LocationNote", locationNote\)/);
+  assert.match(app, /請先填寫位置附註。/);
+  assert.match(app, /位置附註/);
+  assert.doesNotMatch(app, /相片補充|moreInfo|formData\.set\("ImageDescription"/);
   assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
   assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
   assert.match(app, /setSubmitEnabled\(payload\.submitEnabled === true\)/);
@@ -107,7 +111,9 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(submit, /if \(!isRepairSubmitEnabled\(env\)\)/);
   assert.match(submit, /"Latitude"/);
   assert.match(submit, /"Longitude"/);
-  assert.match(submit, /upstream\.set\("Location", coordinatesValue\(incoming\)/);
+  assert.match(submit, /"LocationNote"/);
+  assert.match(submit, /upstream\.set\("Location", `\$\{locationNote\}：\$\{coordinates\}`\)/);
+  assert.doesNotMatch(submit, /ImageDescription/);
   assert.doesNotMatch(submit, /withCoordinates|textValue\(incoming, "Location"\)/);
   assert.match(tile, /CARTO_API_KEY\?: string/);
   assert.match(tile, /\/rastertiles\/\$\{style\}\/\$\{z\}\/\$\{x\}\/\$\{y\}\.png/);

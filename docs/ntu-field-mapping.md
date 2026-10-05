@@ -20,10 +20,10 @@
 | `ApplicantName` | 聯絡步驟姓名欄位 | 否 | 申請人姓名，可留空。 |
 | `ApplicantPhone` | 聯絡步驟電話欄位 | 是 | NTU 表單必填電話。 |
 | `ApplicantEmail` | 聯絡步驟 email 欄位 | 否 | 申請人 email，可留空。 |
-| `Location` | 位置步驟經緯度 | 否 | 前端仍可送此欄位相容舊流程，但本站後端不信任此值；實際送往 NTU 的 `Location` 一律由 `Latitude`、`Longitude` 產生。 |
+| `Location` | 位置步驟經緯度 | 否 | 前端仍可送此欄位相容舊流程，但本站後端不信任此值；實際送往 NTU 的 `Location` 由 `LocationNote`、`Latitude`、`Longitude` 產生。 |
+| `LocationNote` | 位置步驟附註 | 是 | 補充附近地標或路面位置；送往 NTU 時放在座標前。 |
 | `BrokenItemId` | 現況步驟報修類型 | 是 | 選項來自 NTU 表單 `BrokenItemId`；連線失敗時使用本站 fallback 選項。 |
 | `Reason` | 現況步驟問題描述 | 是 | 回報原因與道路狀況描述。 |
-| `ImageDescription` | 現況步驟照片補充說明 | 否 | 補充照片角度、附近地標等資訊。 |
 | `CapAns` | 驗證步驟 captcha 答案 | 是 | 使用者手動輸入的 NTU captcha。 |
 | `ImageTakenYear` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝年份。 |
 | `ImageTakenMonth` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝月份，1 到 12。 |
@@ -42,14 +42,13 @@
 | `ApplicantName` | 前端 `ApplicantName` | `textValue()` trim 後送出，可空白。 |
 | `ApplicantPhone` | 前端 `ApplicantPhone` | `textValue()` trim 後送出；本站送出前檢查必填。 |
 | `ApplicantEmail` | 前端 `ApplicantEmail` | `textValue()` trim 後送出，可空白。 |
-| `Location` | 前端 `Latitude`、`Longitude` | 由 `coordinatesValue()` 驗證後格式化為 `{lat}, {lng}`，固定使用六位小數；不採用前端文字地點。 |
+| `Location` | 前端 `LocationNote`、`Latitude`、`Longitude` | 驗證座標與必填附註後格式化為 `{位置附註}：{lat}, {lng}`，經緯度固定使用六位小數。不採用前端 `Location` 值。 |
 | `BrokenItemId` | 前端 `BrokenItemId` | 對應 NTU `BrokenItemId` select option value；本站送出前檢查必填。 |
 | `Reason` | 前端 `Reason` | `textValue()` trim 後送出；本站送出前檢查必填。 |
 | `ImageFiles` | 前端 `ImageFiles` | 以原檔案與原檔名送出。 |
 | `ImageTakenYear` | 前端 `ImageTakenYear` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
 | `ImageTakenMonth` | 前端 `ImageTakenMonth` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
 | `ImageTakenDay` | 前端 `ImageTakenDay` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
-| `ImageDescription` | 前端 `ImageDescription` | `textValue()` trim 後送出，可空白。 |
 | `CapId` | `rr_ntu_repair.capId` | 從 NTU `PublicRepair/Create` 頁面 hidden input 取得；刷新 captcha 時更新。 |
 | `CapAns` | 前端 `CapAns` | 使用者輸入的 captcha 答案；本站送出前檢查必填。 |
 
@@ -59,6 +58,7 @@
 | --- | --- |
 | `Latitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
 | `Longitude` | 本站位置必填欄位，用來產生 NTU `Location` 文字；不作為獨立 NTU 欄位。 |
+| `LocationNote` | 必填的位置附註，與座標合併成 NTU `Location`；不作為獨立 NTU 欄位。 |
 | `photoMeta.coordinates` | 前端狀態，用於從照片 EXIF 更新地圖位置。 |
 | `captchaUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，主要為後端即時抓取 NTU captcha 後轉成的 `data:` 圖片 URL。 |
 | `captchaProxyUrl` | `POST /api/repair/session` 與 captcha refresh 回傳給前端，保留本站 captcha proxy URL 作為除錯與備援。 |
@@ -79,6 +79,7 @@
 - `ApplicantPhone`
 - `Latitude`
 - `Longitude`
+- `LocationNote`
 - `BrokenItemId`
 - `Reason`
 - `CapAns`

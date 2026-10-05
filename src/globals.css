@@ -500,7 +500,7 @@ textarea:focus-visible,
 }
 
 .details-card {
-  grid-template-rows: auto auto minmax(100px, 1fr) auto;
+  grid-template-rows: auto auto minmax(100px, 1fr);
 }
 
 .details-card .field-label:has(textarea) {
@@ -513,6 +513,13 @@ textarea:focus-visible,
   resize: none;
 }
 
+.location-step {
+  display: grid;
+  grid-template-rows: minmax(280px, 1fr) auto;
+  gap: 14px;
+  min-height: 0;
+}
+
 .location-card {
   position: relative;
   min-height: 360px;
@@ -521,6 +528,10 @@ textarea:focus-visible,
   border-radius: 24px;
   background: var(--surface-soft);
   isolation: isolate;
+}
+
+.location-step .location-card {
+  min-height: 280px;
 }
 
 .location-card .map-canvas {
