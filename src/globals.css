@@ -751,7 +751,6 @@ textarea:focus-visible,
   border-radius: 18px;
   padding: 14px;
   background: rgb(255 255 255 / 97%);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 10%);
 }
 
 .overview-report-panel {
@@ -760,6 +759,7 @@ textarea:focus-visible,
   bottom: 30px;
   left: 12px;
   z-index: 420;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 10%);
 }
 
 .overview-list {
