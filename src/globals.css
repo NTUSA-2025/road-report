@@ -241,7 +241,7 @@ textarea:focus-visible,
   min-height: 0;
   overflow: auto;
   overscroll-behavior-y: contain;
-  padding: 20px 20px calc(16px + var(--keyboard-inset, 0px));
+  padding: 20px 20px 16px;
   scrollbar-width: thin;
   scrollbar-color: #b5c9cf transparent;
 }
@@ -417,6 +417,42 @@ textarea:focus-visible,
   box-shadow: var(--shadow);
 }
 
+.card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-title > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.card-title h2 {
+  margin: 1px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.card-title p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
 .field-label {
   display: grid;
   min-width: 0;
@@ -499,7 +535,7 @@ textarea:focus-visible,
 }
 
 .details-card {
-  grid-template-rows: auto minmax(100px, 1fr);
+  grid-template-rows: auto auto minmax(100px, 1fr);
 }
 
 .details-card .field-label:has(textarea) {
@@ -894,11 +930,8 @@ textarea:focus-visible,
   height: auto;
 }
 
-.captcha-box .field-label {
-  grid-column: 1 / -1;
-}
-
 .captcha-box input {
+  grid-column: 1 / -1;
   text-align: center;
   font-size: 1.12rem;
   letter-spacing: 0.16em;
@@ -1025,8 +1058,9 @@ textarea:focus-visible,
   .app-header { padding-top: calc(12px + env(safe-area-inset-top)); padding-bottom: 12px; }
   .step-tabs { padding-top: 8px; padding-bottom: 8px; }
   .step-tab { min-height: 54px; gap: 4px; }
-  .step-viewport { padding-top: 14px; padding-bottom: calc(12px + var(--keyboard-inset, 0px)); }
+  .step-viewport { padding-top: 14px; padding-bottom: 12px; }
   .app-card { gap: 14px; padding: 18px; }
+  .card-title { padding-bottom: 12px; }
   .two-fields { gap: 14px; }
   .bottom-dock { padding-top: 10px; }
 }
