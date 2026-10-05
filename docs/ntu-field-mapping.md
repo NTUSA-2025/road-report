@@ -24,7 +24,6 @@
 | `LocationNote` | 位置步驟附註 | 是 | 補充附近地標或路面位置；送往 NTU 時放在座標前。 |
 | `BrokenItemId` | 現況步驟報修類型 | 是 | 選項來自 NTU 表單 `BrokenItemId`；連線失敗時使用本站 fallback 選項。 |
 | `Reason` | 現況步驟問題描述 | 是 | 回報原因與道路狀況描述。 |
-| `ImageDescription` | 現況步驟照片補充說明 | 否 | 補充照片角度、附近地標等資訊。 |
 | `CapAns` | 驗證步驟 captcha 答案 | 是 | 使用者手動輸入的 NTU captcha。 |
 | `ImageTakenYear` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝年份。 |
 | `ImageTakenMonth` | 照片 EXIF 日期或送出當下日期 | 否 | 拍攝月份，1 到 12。 |
@@ -50,7 +49,6 @@
 | `ImageTakenYear` | 前端 `ImageTakenYear` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
 | `ImageTakenMonth` | 前端 `ImageTakenMonth` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
 | `ImageTakenDay` | 前端 `ImageTakenDay` | 來自照片 EXIF 日期；若沒有 EXIF 日期，使用目前日期。 |
-| `ImageDescription` | 前端 `ImageDescription` | `textValue()` trim 後送出，可空白。 |
 | `CapId` | `rr_ntu_repair.capId` | 從 NTU `PublicRepair/Create` 頁面 hidden input 取得；刷新 captcha 時更新。 |
 | `CapAns` | 前端 `CapAns` | 使用者輸入的 captcha 答案；本站送出前檢查必填。 |
 

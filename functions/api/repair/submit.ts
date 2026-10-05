@@ -61,7 +61,6 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
   upstream.set("ImageTakenYear", textValue(incoming, "ImageTakenYear"));
   upstream.set("ImageTakenMonth", textValue(incoming, "ImageTakenMonth"));
   upstream.set("ImageTakenDay", textValue(incoming, "ImageTakenDay"));
-  upstream.set("ImageDescription", textValue(incoming, "ImageDescription"));
   upstream.set("CapId", session.capId);
   upstream.set("CapAns", textValue(incoming, "CapAns"));
 

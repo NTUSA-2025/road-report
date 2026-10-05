@@ -60,6 +60,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(app, /formData\.set\("LocationNote", locationNote\)/);
   assert.match(app, /請先填寫位置附註。/);
   assert.match(app, /位置附註/);
+  assert.doesNotMatch(app, /相片補充|moreInfo|formData\.set\("ImageDescription"/);
   assert.match(app, /function goNext\(\)\s*\{\s*const error = validateRequiredFields\(currentStep\)/);
   assert.match(app, /imageUrl: cacheBustUrl\(payload\.captchaUrl\)/);
   assert.match(app, /setSubmitEnabled\(payload\.submitEnabled === true\)/);
@@ -112,6 +113,7 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(submit, /"Longitude"/);
   assert.match(submit, /"LocationNote"/);
   assert.match(submit, /upstream\.set\("Location", `\$\{locationNote\}：\$\{coordinates\}`\)/);
+  assert.doesNotMatch(submit, /ImageDescription/);
   assert.doesNotMatch(submit, /withCoordinates|textValue\(incoming, "Location"\)/);
   assert.match(tile, /CARTO_API_KEY\?: string/);
   assert.match(tile, /\/rastertiles\/\$\{style\}\/\$\{z\}\/\$\{x\}\/\$\{y\}\.png/);
