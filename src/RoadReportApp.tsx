@@ -135,18 +135,39 @@ export function RoadReportApp() {
   const [geoMessage, setGeoMessage] = useState("");
 
   useEffect(() => {
-    function setAppHeight() {
-      const height = window.visualViewport?.height ?? window.innerHeight;
-      document.documentElement.style.setProperty("--app-height", `${height}px`);
+    let appHeight = window.innerHeight;
+
+    function updateViewport() {
+      const focused = document.activeElement;
+      const keyboardInput = focused instanceof HTMLTextAreaElement ||
+        (focused instanceof HTMLInputElement && !["checkbox", "file", "radio"].includes(focused.type));
+
+      if (!keyboardInput) {
+        appHeight = window.innerHeight;
+      }
+
+      const viewport = window.visualViewport;
+      const keyboardInset = keyboardInput && viewport
+        ? Math.max(0, appHeight - viewport.height - viewport.offsetTop)
+        : 0;
+
+      document.documentElement.style.setProperty("--app-height", `${appHeight}px`);
+      document.documentElement.style.setProperty("--keyboard-inset", `${keyboardInset}px`);
     }
 
-    setAppHeight();
-    window.addEventListener("resize", setAppHeight);
-    window.visualViewport?.addEventListener("resize", setAppHeight);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("scroll", updateViewport);
+    document.addEventListener("focusin", updateViewport);
+    document.addEventListener("focusout", updateViewport);
 
     return () => {
-      window.removeEventListener("resize", setAppHeight);
-      window.visualViewport?.removeEventListener("resize", setAppHeight);
+      window.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("scroll", updateViewport);
+      document.removeEventListener("focusin", updateViewport);
+      document.removeEventListener("focusout", updateViewport);
     };
   }, []);
 
@@ -246,8 +267,6 @@ export function RoadReportApp() {
   }, [photoUrl]);
 
   const takenDate = photoMeta.takenAt ?? new Date();
-  const selectedItemLabel =
-    formatRepairItemLabel(items.find((item) => item.value === itemId)?.label ?? "路面");
   const activeStep = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -606,14 +625,6 @@ export function RoadReportApp() {
 
             {currentStep === 1 ? (
               <section className="app-card details-card" aria-label="報修現況">
-                <div className="card-title">
-                  <span>2</span>
-                  <div>
-                    <h2>現況</h2>
-                    <p>{selectedItemLabel}</p>
-                  </div>
-                </div>
-
                 <label className="field-label">
                   申報項目
                   <select
@@ -668,14 +679,6 @@ export function RoadReportApp() {
 
             {currentStep === 3 ? (
               <section className="app-card contact-card" aria-label="聯絡資料">
-                <div className="card-title">
-                  <span>4</span>
-                  <div>
-                    <h2>聯絡資料</h2>
-                    <p>電話、姓名與信箱不公開。</p>
-                  </div>
-                </div>
-
                 <label className="field-label">
                   聯絡電話
                   <input
@@ -726,14 +729,6 @@ export function RoadReportApp() {
 
             {currentStep === 4 ? (
               <section className="app-card captcha-card" aria-label="驗證碼">
-                <div className="card-title">
-                  <span>5</span>
-                  <div>
-                    <h2>驗證碼</h2>
-                    <p>輸入 NTU 表單上的 5 碼驗證碼。</p>
-                  </div>
-                </div>
-
                 <div className="captcha-box">
                   <div className="captcha-image">
                     {captcha.loading ? (
@@ -748,15 +743,18 @@ export function RoadReportApp() {
                     <RefreshCw aria-hidden="true" size={18} strokeWidth={2.4} />
                     換一張
                   </button>
-                  <input
-                    inputMode="text"
-                    maxLength={5}
-                    minLength={5}
-                    onChange={(event) => setCaptchaAnswer(event.target.value)}
-                    placeholder="輸入 5 碼"
-                    required
-                    value={captchaAnswer}
-                  />
+                  <label className="field-label">
+                    驗證碼
+                    <input
+                      inputMode="text"
+                      maxLength={5}
+                      minLength={5}
+                      onChange={(event) => setCaptchaAnswer(event.target.value)}
+                      placeholder="輸入 5 碼"
+                      required
+                      value={captchaAnswer}
+                    />
+                  </label>
                 </div>
 
                 {captcha.error ? <p className="error-text">{captcha.error}</p> : null}
@@ -814,7 +812,7 @@ export function RoadReportApp() {
         )}
       </form>
       <footer className="copyright-footer">
-        <small>© {new Date().getFullYear()} 臺大學生會</small>
+        <small>© {new Date().getFullYear()} 臺大學生會資訊部</small>
       </footer>
     </main>
   );
