@@ -246,7 +246,7 @@ export function RoadReportApp() {
 
   const takenDate = photoMeta.takenAt ?? new Date();
   const selectedItemLabel =
-    items.find((item) => item.value === itemId)?.label ?? "路面";
+    formatRepairItemLabel(items.find((item) => item.value === itemId)?.label ?? "路面");
   const activeStep = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -622,7 +622,7 @@ export function RoadReportApp() {
                   >
                     {items.map((item) => (
                       <option key={item.value} value={item.value}>
-                        {item.label}
+                        {formatRepairItemLabel(item.label)}
                       </option>
                     ))}
                   </select>
@@ -865,7 +865,7 @@ function ReportOverview({
             <div>
               <div className="overview-report-meta">
                 <span>{selectedReport.status}</span>
-                {selectedItemLabel ? <span>{selectedItemLabel}</span> : null}
+                {selectedItemLabel ? <span>{formatRepairItemLabel(selectedItemLabel)}</span> : null}
                 <span>{formatReportDate(selectedReport.reportedAt)}</span>
               </div>
               <h2>{selectedReport.title}</h2>
@@ -887,6 +887,10 @@ function formatReportDate(value: string) {
       year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
       hour12: false,
     });
+}
+
+function formatRepairItemLabel(label: string) {
+  return label.replace(/\s+[A-Za-z].*$/, "").trim();
 }
 
 function ReportOverviewMap({
