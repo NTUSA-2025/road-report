@@ -894,8 +894,11 @@ textarea:focus-visible,
   height: auto;
 }
 
-.captcha-box input {
+.captcha-box .field-label {
   grid-column: 1 / -1;
+}
+
+.captcha-box input {
   text-align: center;
   font-size: 1.12rem;
   letter-spacing: 0.16em;

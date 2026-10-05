@@ -743,15 +743,18 @@ export function RoadReportApp() {
                     <RefreshCw aria-hidden="true" size={18} strokeWidth={2.4} />
                     換一張
                   </button>
-                  <input
-                    inputMode="text"
-                    maxLength={5}
-                    minLength={5}
-                    onChange={(event) => setCaptchaAnswer(event.target.value)}
-                    placeholder="輸入 5 碼"
-                    required
-                    value={captchaAnswer}
-                  />
+                  <label className="field-label">
+                    驗證碼
+                    <input
+                      inputMode="text"
+                      maxLength={5}
+                      minLength={5}
+                      onChange={(event) => setCaptchaAnswer(event.target.value)}
+                      placeholder="輸入 5 碼"
+                      required
+                      value={captchaAnswer}
+                    />
+                  </label>
                 </div>
 
                 {captcha.error ? <p className="error-text">{captcha.error}</p> : null}
@@ -809,7 +812,7 @@ export function RoadReportApp() {
         )}
       </form>
       <footer className="copyright-footer">
-        <small>© {new Date().getFullYear()} 臺大學生會</small>
+        <small>© {new Date().getFullYear()} 臺大學生會資訊部</small>
       </footer>
     </main>
   );
