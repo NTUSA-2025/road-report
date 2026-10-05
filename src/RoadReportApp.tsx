@@ -246,8 +246,6 @@ export function RoadReportApp() {
   }, [photoUrl]);
 
   const takenDate = photoMeta.takenAt ?? new Date();
-  const selectedItemLabel =
-    formatRepairItemLabel(items.find((item) => item.value === itemId)?.label ?? "路面");
   const activeStep = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -606,14 +604,6 @@ export function RoadReportApp() {
 
             {currentStep === 1 ? (
               <section className="app-card details-card" aria-label="報修現況">
-                <div className="card-title">
-                  <span>2</span>
-                  <div>
-                    <h2>現況</h2>
-                    <p>{selectedItemLabel}</p>
-                  </div>
-                </div>
-
                 <label className="field-label">
                   申報項目
                   <select
@@ -668,14 +658,6 @@ export function RoadReportApp() {
 
             {currentStep === 3 ? (
               <section className="app-card contact-card" aria-label="聯絡資料">
-                <div className="card-title">
-                  <span>4</span>
-                  <div>
-                    <h2>聯絡資料</h2>
-                    <p>電話、姓名與信箱不公開。</p>
-                  </div>
-                </div>
-
                 <label className="field-label">
                   聯絡電話
                   <input
@@ -726,14 +708,6 @@ export function RoadReportApp() {
 
             {currentStep === 4 ? (
               <section className="app-card captcha-card" aria-label="驗證碼">
-                <div className="card-title">
-                  <span>5</span>
-                  <div>
-                    <h2>驗證碼</h2>
-                    <p>輸入 NTU 表單上的 5 碼驗證碼。</p>
-                  </div>
-                </div>
-
                 <div className="captcha-box">
                   <div className="captcha-image">
                     {captcha.loading ? (
