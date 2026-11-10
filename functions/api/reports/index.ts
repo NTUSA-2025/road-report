@@ -19,6 +19,8 @@ export async function onRequestGet({ env }: PagesContext<ReportStorageEnv>) {
         description: row.reason,
         status: row.status === "submitted" ? "已送出" : row.status,
         itemId: row.broken_item_id,
+        schoolCaseId: row.school_case_id,
+        schoolCaseNumber: row.school_case_number,
         photoUrl: `/api/reports/${encodeURIComponent(row.id)}/photo`,
         coordinates: { lat: row.latitude, lng: row.longitude, source: "map" },
         reportedAt: row.created_at,

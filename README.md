@@ -19,6 +19,7 @@
 - 位置送出使用必填的 `LocationNote`、`Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`（例：`傅鐘前方柏油路：25.017340, 121.539750`）
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期與 `CapAns`
 - 送出後把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
+- 轉送臺大成功時，擷取詳細頁 ID 與正式案號，送出結果和總覽可連到臺大公開詳細頁查看最新進度
 - 聯絡步驟可選擇是否讓本站儲存姓名、電話與 E-mail；預設關閉，關閉時 D1 的三個欄位均存 `opt-out`
 
 ## 介面配色
@@ -55,6 +56,7 @@ npm run build
 
 ```bash
 npx wrangler d1 execute road-report-db --config=wrangler.local.jsonc --local --persist-to=.wrangler/state --file=migrations/0001_reports.sql
+npx wrangler d1 execute road-report-db --config=wrangler.local.jsonc --local --persist-to=.wrangler/state --file=migrations/0002_school_case_id.sql
 npm run dev:pages
 ```
 
@@ -84,21 +86,22 @@ Pages Functions 使用的 Dashboard binding **變數名稱**如下。名稱須�
 
 | 類型 | 變數名稱 | 用途 |
 | --- | --- | --- |
-| D1 | `road-report-db` | `reports` 表，儲存回報內容與照片索引；`school_case_number` 欄位預留給學校案號。 |
+| D1 | `road-report-db` | `reports` 表，儲存回報內容、照片索引、臺大案號與詳細頁 ID。 |
 | R2 | `road-report-r2` | 以 `reports/{id}/photo` 為 key 儲存原始照片。 |
 | KV | `ROAD_REPORT_KV` | 以 `report:{id}` 為 key 儲存不含聯絡資訊的報修狀態索引。 |
 
-D1 建表 SQL 在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)；**部署網站不會自動建表**。本機使用上方的 `--local` 指令。正式 D1 使用下列指令，這會修改 Cloudflare 上的資料庫；請先確認登入的帳號與資料庫名稱：
+D1 建表與案號欄位 SQL 分別在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)、[`migrations/0002_school_case_id.sql`](migrations/0002_school_case_id.sql)；**部署網站不會自動執行 migration**。本機使用上方的 `--local` 指令。正式 D1 依序執行下列指令，這會修改 Cloudflare 上的資料庫；請先確認登入的帳號與資料庫名稱：
 
 ```bash
 npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.sql
+npx wrangler d1 execute road-report-db --remote --file=migrations/0002_school_case_id.sql
 ```
 
 `wrangler.local.jsonc` 只供本機 D1 建表使用，其中 `database_id` 是固定的本機識別值，不是正式資源 ID。正式與 Preview binding 仍由 Dashboard 管理。
 
-目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：仍取得學校 session、顯示 captcha 並要求輸入 5 碼，但**不把報修表單 POST 到學校，也不向學校驗證答案**；回報直接寫入 D1、R2、KV，沿用 `submitted` 狀態。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會轉送學校並由 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
+目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：仍取得學校 session、顯示 captcha 並要求輸入 5 碼，但**不把報修表單 POST 到學校，也不向學校驗證答案**；回報直接寫入 D1、R2、KV，沿用 `submitted` 狀態，沒有臺大案號或進度連結。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會轉送學校並由 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
 
-一般模式只在 NTU 表單接受送出後儲存。D1、R2、KV binding 或資料表缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 D1、R2 或 KV。
+一般模式只在 NTU 表單接受送出後儲存。成功回應會重新導向 `/repairservice2/PublicRepair/Details?caseId=...`；本站從詳細頁讀取案號，並保存 ID 與案號。案號暫時讀不到時仍保存詳細頁 ID，讓使用者可直接查看臺大進度。D1、R2、KV binding 或資料表缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 D1、R2 或 KV。
 
 `npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
 

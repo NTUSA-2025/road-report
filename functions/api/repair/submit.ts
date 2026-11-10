@@ -8,6 +8,7 @@ import {
   readRepairSession,
 } from "../../_lib/ntu";
 import { checkReportSchema, reportStorage, saveReport, type ReportStorageEnv } from "../../_lib/report-storage";
+import { caseIdFromRedirect, fetchPublicCaseNumber } from "../../_lib/ntu-case";
 import type { PagesContext } from "../../_lib/types";
 
 const REQUIRED_FIELDS = [
@@ -135,10 +136,21 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
     }
   }
 
+  const schoolCaseId = redirected ? caseIdFromRedirect(location) : null;
+  const schoolCaseNumber = schoolCaseId
+    ? await fetchPublicCaseNumber(schoolCaseId).catch((error) => {
+      console.error("Failed to read NTU case number", schoolCaseId, error);
+      return null;
+    })
+    : null;
+  const schoolCase = schoolCaseId ? { id: schoolCaseId, number: schoolCaseNumber } : null;
+
   try {
-    const id = await saveReport(storage, incoming, image);
+    const id = await saveReport(storage, incoming, image, schoolCase);
     return jsonResponse({
       id,
+      schoolCaseId,
+      schoolCaseNumber,
       message: redirected
         ? "NTU 報修表單已接受送出，請留意通知信或後續查詢頁。"
         : "已送出到 NTU 報修表單。",
@@ -148,6 +160,8 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
     console.error("NTU accepted report, but local save failed", error);
     return jsonResponse({
       message: "學校已收到報修，但本站未能保存回報資料。請勿重複送出。",
+      schoolCaseId,
+      schoolCaseNumber,
       ...(redirected ? { redirect: location } : {}),
     });
   }

@@ -10,7 +10,7 @@
 4. 前端透過 `/api/repair/captcha` 顯示 NTU captcha 圖片，使用者手動輸入答案。
 5. 前端送出 `POST /api/repair/submit`。
 6. 正式送出流程中，Pages Function 讀取 `rr_ntu_repair`，組成 multipart `FormData` 後轉送到 NTU `PublicRepair/Create`。
-7. NTU 接受送出後，本站將回報欄位寫入 D1、照片寫入 R2，並在 KV 建立報修索引。
+7. NTU 接受送出後，本站從 `302 Location` 擷取詳細頁 `caseId`，讀取公開詳細頁的案號，將回報欄位、案號與詳細頁 ID 寫入 D1，照片寫入 R2，並在 KV 建立報修索引。
 
 ## 前端到本站 API
 
@@ -77,7 +77,7 @@
 
 ## 本站儲存
 
-表結構見 [`migrations/0001_reports.sql`](../migrations/0001_reports.sql)。D1 儲存回報時間、項目、描述、位置附註與座標、照片拍攝日期、R2 key 與照片資訊，以及依開關處理後的聯絡欄位。`school_case_number` 預留為可空欄位；目前不擷取或寫入學校案號。R2 儲存原始照片；KV 的 `report:{id}` 僅含本站報修 ID、建立時間與 `submitted` 狀態。總覽讀取 D1 最近 100 件回報，照片經由 R2 讀取端點顯示，不讀取聯絡欄位。
+表結構見 [`migrations/0001_reports.sql`](../migrations/0001_reports.sql) 和 [`migrations/0002_school_case_id.sql`](../migrations/0002_school_case_id.sql)。D1 儲存回報時間、項目、描述、位置附註與座標、照片拍攝日期、R2 key 與照片資訊、臺大案號與詳細頁 ID，以及依開關處理後的聯絡欄位。R2 儲存原始照片；KV 的 `report:{id}` 僅含本站報修 ID、建立時間與 `submitted` 狀態。總覽讀取 D1 最近 100 件回報，照片經由 R2 讀取端點顯示，並以詳細頁 ID 建立臺大進度連結；不讀取聯絡欄位。
 
 ## 目前必填檢查
 

@@ -759,6 +759,16 @@ textarea:focus-visible,
   -webkit-line-clamp: 2;
 }
 
+.case-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--brand-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .overview-report-meta {
   display: flex;
   flex-wrap: wrap;

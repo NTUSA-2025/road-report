@@ -49,6 +49,8 @@ type ReportSummary = {
   description: string;
   status: string;
   itemId: string;
+  schoolCaseId: string | null;
+  schoolCaseNumber: string | null;
   photoUrl: string;
   coordinates: Coordinates;
   reportedAt: string;
@@ -132,6 +134,7 @@ export function RoadReportApp() {
   const [submitEnabled, setSubmitEnabled] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+  const [submitTracking, setSubmitTracking] = useState<{ id: string; number: string | null } | null>(null);
   const [geoMessage, setGeoMessage] = useState("");
 
   useEffect(() => {
@@ -387,6 +390,7 @@ export function RoadReportApp() {
 
     setSubmitState("submitting");
     setSubmitMessage("");
+    setSubmitTracking(null);
 
     const formData = new FormData();
     formData.set("ApplicantName", name);
@@ -418,6 +422,12 @@ export function RoadReportApp() {
 
       setSubmitState("success");
       setSubmitMessage(payload.message ?? "已送出回報。");
+      if (typeof payload.schoolCaseId === "string" && /^[1-9]\d*$/.test(payload.schoolCaseId)) {
+        setSubmitTracking({
+          id: payload.schoolCaseId,
+          number: typeof payload.schoolCaseNumber === "string" ? payload.schoolCaseNumber : null,
+        });
+      }
     } catch (error) {
       setSubmitState("error");
       setSubmitMessage(
@@ -771,6 +781,14 @@ export function RoadReportApp() {
               }`}
             >
               {submitMessage}
+              {submitState === "success" && submitTracking ? (
+                <>
+                  <br />
+                  <a className="case-link" href={schoolCaseUrl(submitTracking.id)} rel="noopener noreferrer" target="_blank">
+                    {submitTracking.number ? `臺大案號 ${submitTracking.number} · ` : ""}查看臺大最新進度
+                  </a>
+                </>
+              ) : null}
             </p>
           ) : null}
           <div className="dock-actions">
@@ -917,6 +935,11 @@ function OverviewReportCard({
         </div>
         <h2>{report.title}</h2>
         <p>{report.description}</p>
+        {report.schoolCaseId ? (
+          <a className="case-link" href={schoolCaseUrl(report.schoolCaseId)} rel="noopener noreferrer" target="_blank">
+            {report.schoolCaseNumber ? `臺大案號 ${report.schoolCaseNumber} · ` : ""}查看臺大最新進度
+          </a>
+        ) : null}
       </div>
     </article>
   );
@@ -930,6 +953,10 @@ function formatReportDate(value: string) {
       year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
       hour12: false,
     });
+}
+
+function schoolCaseUrl(caseId: string) {
+  return `https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=${encodeURIComponent(caseId)}`;
 }
 
 function formatRepairItemLabel(label: string) {

@@ -40,7 +40,7 @@ export function reportStorage(env: ReportStorageEnv) {
 }
 
 export async function checkReportSchema(database: ReportDatabase) {
-  await database.prepare("SELECT id FROM reports LIMIT 1").first();
+  await database.prepare("SELECT id, school_case_id FROM reports LIMIT 1").first();
 }
 
 export type PublicReportRow = {
@@ -52,13 +52,16 @@ export type PublicReportRow = {
   location_note: string;
   latitude: number;
   longitude: number;
+  school_case_number: string | null;
+  school_case_id: string | null;
 };
 
 export async function listPublicReports(database: ReportDatabase) {
   const [count, rows] = await Promise.all([
     database.prepare("SELECT COUNT(*) AS total FROM reports").first<{ total: number }>(),
     database.prepare(`
-      SELECT id, created_at, status, broken_item_id, reason, location_note, latitude, longitude
+      SELECT id, created_at, status, broken_item_id, reason, location_note, latitude, longitude,
+        school_case_number, school_case_id
       FROM reports ORDER BY created_at DESC, id DESC LIMIT 100
     `).all<PublicReportRow>(),
   ]);
@@ -76,6 +79,7 @@ export async function saveReport(
   storage: ReturnType<typeof reportStorage>,
   incoming: FormData,
   image: File,
+  schoolCase: { id: string; number: string | null } | null = null,
 ) {
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
@@ -94,8 +98,8 @@ export async function saveReport(
         id, created_at, broken_item_id, reason, location_note, latitude, longitude,
         image_taken_year, image_taken_month, image_taken_day,
         photo_key, photo_name, photo_content_type, photo_size, save_contact_info,
-        applicant_name, applicant_phone, applicant_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        applicant_name, applicant_phone, applicant_email, school_case_number, school_case_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       createdAt,
@@ -115,6 +119,8 @@ export async function saveReport(
       contact("ApplicantName"),
       contact("ApplicantPhone"),
       contact("ApplicantEmail"),
+      schoolCase?.number ?? null,
+      schoolCase?.id ?? null,
     ).run();
 
     if (!result.success) {
