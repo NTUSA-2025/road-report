@@ -12,6 +12,7 @@
 
 - 地圖預設在臺大校園，支援手機定位與點選地圖更新座標
 - 回報狀況總覽讀取 D1 最近 100 件回報，以地圖呈現位置、描述與 R2 照片；總件數來自 D1
+- 進度追蹤頁可輸入臺大案號，或點選本站已連結的案件；後端讀取臺大公開列表與詳細頁，顯示當下狀態、申請時間、地點與事由
 - 手機拍照按鈕位於照片區中下方，使用 `capture="environment"`
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
@@ -108,5 +109,7 @@ npx wrangler d1 execute road-report-db --remote --file=migrations/0002_school_ca
 本站不將 Cloudflare 資源 ID 寫入公開 repo。Pages 專案設定與 KV、D1、R2 binding 由 Dashboard 管理；新增或調整 binding 後需重新部署。`CARTO_API_KEY` 的值也只放在 Dashboard secret 與本機未追蹤的 `.env`。
 
 總覽使用 `GET /api/reports` 讀取最新 100 件回報與資料庫總件數，並以 `GET /api/reports/{id}/photo` 取得照片。公開查詢只取回報項目、描述、位置、狀態與時間；不回傳姓名、電話、Email、NTU session 或驗證碼。
+
+進度追蹤頁使用 `GET /api/repair/progress?caseId=...` 讀取已連結案件，或以 `GET /api/repair/progress?caseNumber=...` 透過臺大公開列表查找案號。Pages Function 僅查詢 `my.ntu.edu.tw` 的公開案件頁；回應包含臺大當下的狀態及查詢時間，不寫回 D1。本站總覽的「已送出」表示本站的送出紀錄，不代表臺大最新處理狀態；最新進度應看追蹤頁或臺大原始詳細頁。手動輸入案號也可查詢未從本站送出的臺大案件。
 
 本專案刻意不自動破解 captcha，只把 NTU 原表單的 captcha 接到本站顯示，仍由使用者辨識輸入。

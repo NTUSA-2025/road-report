@@ -769,6 +769,205 @@ textarea:focus-visible,
   text-underline-offset: 2px;
 }
 
+.tracking-inline-button {
+  margin-left: 10px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--brand-ink);
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tracking-page {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.tracking-intro h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+}
+
+.tracking-intro p,
+.tracking-linked p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.tracking-search,
+.tracking-linked,
+.tracking-case {
+  gap: 12px;
+}
+
+.tracking-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.tracking-search-row input {
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fafafa;
+  color: var(--foreground);
+  text-transform: uppercase;
+}
+
+.tracking-search-row button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 14px;
+  background: var(--brand);
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+.tracking-section-heading,
+.tracking-case-heading,
+.tracking-case-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracking-section-heading h3,
+.tracking-case-heading h3 {
+  margin: 0;
+}
+
+.tracking-section-heading h3 {
+  font-size: 0.95rem;
+}
+
+.tracking-linked-list {
+  display: grid;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.tracking-linked-item {
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--brand-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--brand-soft);
+  color: var(--foreground);
+  text-align: left;
+}
+
+.tracking-linked-item strong {
+  color: var(--brand-ink);
+  font-size: 0.83rem;
+}
+
+.tracking-linked-item span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tracking-placeholder {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.tracking-placeholder.error-text {
+  border-color: #efd0d4;
+  background: #fff1f2;
+  color: var(--danger);
+}
+
+.tracking-case-heading small,
+.tracking-checked-at {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.tracking-case-heading h3 {
+  margin-top: 4px;
+  font-size: 1.25rem;
+}
+
+.tracking-status {
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: 0.8rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.tracking-case dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.tracking-case dl div {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.tracking-case dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.tracking-case dd {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.tracking-case-actions {
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.tracking-case-actions a,
+.tracking-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--brand-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .overview-report-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1024,8 +1223,10 @@ textarea:focus-visible,
 @media (max-width: 359px) {
   .app-header { padding-right: 16px; padding-left: 16px; gap: 8px; }
   .header-actions { gap: 5px; }
+  .header-view-button { width: 40px; padding: 0; }
+  .header-view-button span { display: none; }
   .app-header h1 { font-size: 1.05rem; }
-  .step-viewport, .overview-page { padding-right: 14px; padding-left: 14px; }
+  .step-viewport, .overview-page, .tracking-page { padding-right: 14px; padding-left: 14px; }
   .app-card { padding: 16px; }
   .overview-report-card { grid-template-columns: 52px minmax(0, 1fr); padding: 10px; gap: 9px; }
   .overview-report-card img { width: 52px; height: 76px; }

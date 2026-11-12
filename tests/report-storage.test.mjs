@@ -14,7 +14,7 @@ const caseSource = await readFile(new URL("../functions/_lib/ntu-case.ts", impor
 const caseCompiled = ts.transpileModule(caseSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const { caseIdFromRedirect, fetchPublicCaseNumber } = await import(
+const { caseIdFromRedirect, fetchPublicCaseNumber, findPublicCaseId, parsePublicCase } = await import(
   `data:text/javascript;base64,${Buffer.from(caseCompiled).toString("base64")}`
 );
 
@@ -151,9 +151,29 @@ test("accepts only public NTU detail redirects and reads the case number", async
   assert.equal(caseIdFromRedirect("/repairservice2/PublicRepair/List?caseId=171234"), null);
   assert.equal(caseIdFromRedirect("/repairservice2/PublicRepair/Details?caseId=abc"), null);
 
-  t.mock.method(globalThis, "fetch", async (url) => {
-    assert.equal(String(url), "https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=171234");
-    return new Response("<title>MA11504000 - 公設修繕編輯</title>", { status: 200 });
+  const detail = `<title>MA11504000 - 公設修繕編輯</title>
+    <h2><a href="/repairservice2/PublicRepair/Details?caseId=171234">MA11504000</a></h2>
+    <div><div class="bg-c-yellow2 rounded p-1 d-inline-block">公設</div>
+    <div class="bg-c-yellow2 rounded p-1 d-inline-block">處理中</div></div><br />
+    <label class="control-label">申請日期</label><div class="form-control-plaintext">2026/11/10 18:20:54</div>
+    <label for="Location">報修地點</label><div>博雅教學館西側</div>
+    <label for="BrokenItem">申報項目</label><div>路面</div>
+    <label for="Reason">申報事由</label><div>地磚不平 &amp; 鬆動</div>`;
+  assert.deepEqual(parsePublicCase("171234", detail), {
+    caseId: "171234", caseNumber: "MA11504000", status: "處理中",
+    submittedAt: "2026/11/10 18:20:54", location: "博雅教學館西側",
+    item: "路面", reason: "地磚不平 & 鬆動",
+    detailUrl: "https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=171234",
   });
+
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).includes("/PublicRepair/List?")) {
+      assert.match(String(url), /keyWord=MA11504000/);
+      return new Response(`<a href="/repairservice2/PublicRepair/Details?caseId=171234">MA11504000</a>`);
+    }
+    assert.equal(String(url), "https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=171234");
+    return new Response(detail);
+  });
+  assert.equal(await findPublicCaseId("MA11504000"), "171234");
   assert.equal(await fetchPublicCaseNumber("171234"), "MA11504000");
 });

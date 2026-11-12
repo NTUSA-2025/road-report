@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { Map as LeafletMap, Marker as LeafletMarker, TileLayer as LeafletTileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "react";
+import { CaseTracking } from "./CaseTracking";
 import { bindMapCenterSelection } from "./map-center-selection";
 
 type RepairItem = {
@@ -41,7 +42,7 @@ type CaptchaState = {
 };
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
-type AppView = "report" | "overview";
+type AppView = "report" | "overview" | "tracking";
 
 type ReportSummary = {
   id: string;
@@ -223,7 +224,7 @@ export function RoadReportApp() {
   }, []);
 
   useEffect(() => {
-    if (appView !== "overview") {
+    if (appView === "report") {
       return;
     }
 
@@ -509,7 +510,7 @@ export function RoadReportApp() {
   return (
     <main className="mobile-app-shell">
       <form
-        className={`report-app ${appView === "overview" ? "overview-app" : ""}`}
+        className={`report-app ${appView !== "report" ? "overview-app" : ""}`}
         noValidate
         onSubmit={handleSubmit}
       >
@@ -528,19 +529,24 @@ export function RoadReportApp() {
             </div>
           </div>
           <div className="header-actions">
-            <button
-              aria-label={appView === "overview" ? "返回回報頁面" : "開啟回報總覽"}
-              className={`header-view-button ${appView === "overview" ? "is-return" : ""}`}
-              onClick={() => setAppView((current) => (current === "overview" ? "report" : "overview"))}
-              type="button"
-            >
-              {appView === "overview" ? (
-                <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
-              ) : (
-                <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
-              )}
-              {appView === "overview" ? "返回回報" : "總覽"}
-            </button>
+            {(["report", "overview", "tracking"] as const).filter((view) => view !== appView).map((view) => (
+              <button
+                aria-label={view === "report" ? "返回回報頁面" : view === "overview" ? "開啟回報總覽" : "開啟進度追蹤"}
+                className={`header-view-button ${view === "report" ? "is-return" : ""}`}
+                key={view}
+                onClick={() => setAppView(view)}
+                type="button"
+              >
+                {view === "report" ? (
+                  <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
+                ) : view === "overview" ? (
+                  <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
+                ) : (
+                  <List aria-hidden="true" size={18} strokeWidth={2.4} />
+                )}
+                <span>{view === "report" ? "回報" : view === "overview" ? "總覽" : "進度"}</span>
+              </button>
+            ))}
           </div>
         </header>
 
@@ -549,6 +555,14 @@ export function RoadReportApp() {
             {...overview}
             items={items}
             onRetry={() => setOverviewReload((current) => current + 1)}
+          />
+        ) : appView === "tracking" ? (
+          <CaseTracking
+            reports={overview.reports}
+            loading={overview.loading}
+            reportsError={overview.error}
+            initialCaseId={submitTracking?.id ?? null}
+            onRetryReports={() => setOverviewReload((current) => current + 1)}
           />
         ) : (
           <>
@@ -787,6 +801,9 @@ export function RoadReportApp() {
                   <a className="case-link" href={schoolCaseUrl(submitTracking.id)} rel="noopener noreferrer" target="_blank">
                     {submitTracking.number ? `臺大案號 ${submitTracking.number} · ` : ""}查看臺大最新進度
                   </a>
+                  <button className="tracking-inline-button" onClick={() => setAppView("tracking")} type="button">
+                    在本站追蹤
+                  </button>
                 </>
               ) : null}
             </p>
