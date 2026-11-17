@@ -978,10 +978,12 @@ function OverviewReportCard({
   className: string;
 }) {
   const itemLabel = items.find((item) => item.value === report.itemId)?.label;
-  const progress = report.schoolCaseId ? schoolProgress[report.schoolCaseId] : null;
+  const schoolCaseId = report.schoolCaseId;
+  const progress = schoolCaseId ? schoolProgress[schoolCaseId] : null;
   const progressNote = progress && progress !== "error"
     ? [progress.unacceptedReason, progress.returnedReason].filter(Boolean).join("；")
     : "";
+  const stages = progress && progress !== "error" ? caseStages(progress.status) : [];
 
   return (
     <article className={`overview-report-card ${className}`}>
@@ -994,22 +996,41 @@ function OverviewReportCard({
         </div>
         <h2>{report.title}</h2>
         <p>{report.description}</p>
-        {report.schoolCaseId ? (
-          progress === "error" ? (
-            <a aria-label={`校方狀態暫時無法取得，開啟臺大案件 ${report.schoolCaseNumber ?? report.schoolCaseId}`} className="case-link" href={schoolCaseUrl(report.schoolCaseId)} rel="noopener noreferrer" target="_blank">
+      </div>
+      {schoolCaseId ? (
+        <div className={`case-progress-footer${progress && progress !== "error" && progress.status === "已不受理" ? " is-rejected" : ""}`}>
+          {progress === "error" ? (
+            <a aria-label={`校方狀態暫時無法取得，開啟臺大案件 ${report.schoolCaseNumber ?? schoolCaseId}`} className="case-link" href={schoolCaseUrl(schoolCaseId)} rel="noopener noreferrer" target="_blank">
               校方狀態暫時無法取得，前往臺大查看
             </a>
           ) : progress ? (
-            <a aria-label={`${progress.status}${progressNote ? `｜${progressNote}` : ""}，臺大案件 ${report.schoolCaseNumber ?? report.schoolCaseId}`} className="case-link case-progress" href={schoolCaseUrl(report.schoolCaseId)} rel="noopener noreferrer" target="_blank">
-              {progress.status}{progressNote ? `｜${progressNote}` : ""}
-            </a>
+            <>
+              <ol aria-label="臺大案件處理階段" className="case-stage-list" role="list">
+                {stages.map((stage) => (
+                  <li aria-current={stage === progress.status ? "step" : undefined} className={stage === progress.status ? "is-current" : ""} key={stage}>
+                    {stage === progress.status ? (
+                      <a aria-label={`${stage}，臺大案件 ${report.schoolCaseNumber ?? schoolCaseId}`} href={schoolCaseUrl(schoolCaseId)} rel="noopener noreferrer" target="_blank">{stage}</a>
+                    ) : stage}
+                  </li>
+                ))}
+              </ol>
+              {progressNote ? <div className="case-stage-note">{progressNote}</div> : null}
+            </>
           ) : (
             <span className="case-progress-pending">查詢校方狀態中…</span>
-          )
-        ) : null}
-      </div>
+          )}
+        </div>
+      ) : null}
     </article>
   );
+}
+
+function caseStages(status: string) {
+  if (status === "已不受理") return ["已送出", "已不受理"];
+  if (["已送出", "處理中", "已派工修繕", "已結案", "專簽結案"].includes(status)) {
+    return ["已送出", "處理中", "已派工修繕", status === "專簽結案" ? "專簽結案" : "已結案"];
+  }
+  return ["已送出", status];
 }
 
 function formatReportDate(value: string) {

@@ -771,14 +771,74 @@ textarea:focus-visible,
   text-underline-offset: 2px;
 }
 
-.case-progress {
+.case-progress-footer {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.case-stage-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case-stage-list li {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.case-stage-list li::before {
+  display: block;
+  height: 5px;
+  margin-bottom: 7px;
+  border-radius: 999px;
+  background: var(--line);
+  content: "";
+}
+
+.case-stage-list li.is-current {
+  color: var(--brand-ink);
+  font-weight: 750;
+}
+
+.case-stage-list li.is-current::before {
+  background: var(--brand-ink);
+}
+
+.case-progress-footer.is-rejected .case-stage-list li.is-current {
+  color: var(--danger);
+}
+
+.case-progress-footer.is-rejected .case-stage-list li.is-current::before {
+  background: var(--danger);
+}
+
+.case-stage-list a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.case-stage-note {
+  margin-top: 8px;
+  color: var(--foreground);
+  font-size: 0.76rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .case-progress-pending {
   display: inline-block;
-  margin-top: 4px;
   color: var(--muted);
   font-size: 0.76rem;
 }
