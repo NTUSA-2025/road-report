@@ -109,7 +109,7 @@ const STEPS = [
 export function RoadReportApp() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
-  const [appView, setAppView] = useState<AppView>("report");
+  const [appView, setAppView] = useState<AppView>(viewFromUrl);
   const [overview, setOverview] = useState<OverviewState>({
     reports: [], total: 0, loading: false, error: "",
   });
@@ -143,6 +143,27 @@ export function RoadReportApp() {
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitTracking, setSubmitTracking] = useState<{ id: string; number: string | null } | null>(null);
   const [geoMessage, setGeoMessage] = useState("");
+
+  useEffect(() => {
+    function onPopState() {
+      setAppView(viewFromUrl());
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    document.title = appView === "overview" ? "回報總覽｜路平回報系統" : "路平回報系統";
+  }, [appView]);
+
+  function navigateToView(view: AppView) {
+    const url = new URL(window.location.href);
+    if (view === "overview") url.searchParams.set("view", "overview");
+    else url.searchParams.delete("view");
+    window.history.pushState(null, "", url);
+    setAppView(view);
+  }
 
   useEffect(() => {
     let appHeight = window.innerHeight;
@@ -578,7 +599,7 @@ export function RoadReportApp() {
                 aria-label={view === "report" ? "返回回報頁面" : "開啟回報總覽"}
                 className={`header-view-button ${view === "report" ? "is-return" : ""}`}
                 key={view}
-                onClick={() => setAppView(view)}
+                onClick={() => navigateToView(view)}
                 type="button"
               >
                 {view === "report" ? (
@@ -834,7 +855,7 @@ export function RoadReportApp() {
                 <>
                   <br />
                   {submitTracking.number ? `臺大案號 ${submitTracking.number}` : "已取得臺大案件"}
-                  <button className="overview-inline-button" onClick={() => setAppView("overview")} type="button">
+                  <button className="overview-inline-button" onClick={() => navigateToView("overview")} type="button">
                     在總覽查看進度
                   </button>
                 </>
@@ -884,6 +905,10 @@ export function RoadReportApp() {
       </footer>
     </main>
   );
+}
+
+function viewFromUrl(): AppView {
+  return new URL(window.location.href).searchParams.get("view") === "overview" ? "overview" : "report";
 }
 
 function ReportOverview({
