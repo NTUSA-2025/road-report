@@ -939,10 +939,6 @@ function ReportOverview({
       )}
 
       <div className="overview-view-switch">
-        <button onClick={onRetry} type="button">
-          <RefreshCw aria-hidden="true" size={18} />
-          更新進度
-        </button>
         <button
           aria-pressed={viewMode === "map"}
           className={viewMode === "map" ? "is-active" : ""}
