@@ -163,8 +163,23 @@ test("accepts only public NTU detail redirects and reads the case number", async
     caseId: "171234", caseNumber: "MA11504000", status: "處理中",
     submittedAt: "2026/11/10 18:20:54", location: "博雅教學館西側",
     item: "路面", reason: "地磚不平 & 鬆動",
+    unacceptedReason: "", returnedReason: "",
     detailUrl: "https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=171234",
   });
+
+  const rejectedDetail = detail.replace("處理中", "已不受理") + `
+    <div><h3>不受理說明</h3><div>已有舊案申請，另本案已115年9月30日修繕完成。</div></div>
+    <div><h3>退件說明</h3><div>請改由管理單位申請。</div></div>`;
+  assert.deepEqual(
+    (({ status, unacceptedReason, returnedReason }) => ({ status, unacceptedReason, returnedReason }))(
+      parsePublicCase("171234", rejectedDetail),
+    ),
+    {
+      status: "已不受理",
+      unacceptedReason: "已有舊案申請，另本案已115年9月30日修繕完成。",
+      returnedReason: "請改由管理單位申請。",
+    },
+  );
 
   t.mock.method(globalThis, "fetch", async (url) => {
     if (String(url).includes("/PublicRepair/List?")) {

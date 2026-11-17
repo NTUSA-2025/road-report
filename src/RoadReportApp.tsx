@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import type { Map as LeafletMap, Marker as LeafletMarker, TileLayer as LeafletTileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "react";
-import { CaseTracking } from "./CaseTracking";
 import { bindMapCenterSelection } from "./map-center-selection";
 
 type RepairItem = {
@@ -42,7 +41,13 @@ type CaptchaState = {
 };
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
-type AppView = "report" | "overview" | "tracking";
+type AppView = "report" | "overview";
+
+type SchoolProgress = {
+  status: string;
+  unacceptedReason: string;
+  returnedReason: string;
+} | "error";
 
 type ReportSummary = {
   id: string;
@@ -109,6 +114,7 @@ export function RoadReportApp() {
     reports: [], total: 0, loading: false, error: "",
   });
   const [overviewReload, setOverviewReload] = useState(0);
+  const [schoolProgress, setSchoolProgress] = useState<Record<string, SchoolProgress>>({});
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState<Coordinates>(DEFAULT_COORDS);
   const [items, setItems] = useState<RepairItem[]>(FALLBACK_ITEMS);
@@ -224,12 +230,13 @@ export function RoadReportApp() {
   }, []);
 
   useEffect(() => {
-    if (appView === "report") {
+    if (appView !== "overview") {
       return;
     }
 
     const controller = new AbortController();
     setOverview({ reports: [], total: 0, loading: true, error: "" });
+    setSchoolProgress({});
 
     async function loadReports() {
       try {
@@ -245,6 +252,43 @@ export function RoadReportApp() {
 
         if (!controller.signal.aborted) {
           setOverview({ reports: payload.reports, total: payload.total, loading: false, error: "" });
+
+          const caseIds = [...new Set((payload.reports as ReportSummary[])
+            .map((report) => report.schoolCaseId)
+            .filter((id): id is string => Boolean(id)))];
+          let next = 0;
+          async function loadProgress() {
+            while (next < caseIds.length && !controller.signal.aborted) {
+              const caseId = caseIds[next++];
+              try {
+                const response = await fetch(`/api/repair/progress?${new URLSearchParams({ caseId })}`, {
+                  cache: "no-store",
+                  signal: controller.signal,
+                });
+                const result = await response.json() as {
+                  report?: { status?: string; unacceptedReason?: string; returnedReason?: string };
+                };
+                const report = result.report;
+                const status = report?.status;
+                if (!response.ok || !status) throw new Error("無法取得校方進度");
+                if (!controller.signal.aborted) {
+                  setSchoolProgress((current) => ({
+                    ...current,
+                    [caseId]: {
+                      status,
+                      unacceptedReason: report?.unacceptedReason ?? "",
+                      returnedReason: report?.returnedReason ?? "",
+                    },
+                  }));
+                }
+              } catch {
+                if (!controller.signal.aborted) {
+                  setSchoolProgress((current) => ({ ...current, [caseId]: "error" }));
+                }
+              }
+            }
+          }
+          void Promise.all(Array.from({ length: Math.min(4, caseIds.length) }, loadProgress));
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -529,9 +573,9 @@ export function RoadReportApp() {
             </div>
           </div>
           <div className="header-actions">
-            {(["report", "overview", "tracking"] as const).filter((view) => view !== appView).map((view) => (
+            {(["report", "overview"] as const).filter((view) => view !== appView).map((view) => (
               <button
-                aria-label={view === "report" ? "返回回報頁面" : view === "overview" ? "開啟回報總覽" : "開啟進度追蹤"}
+                aria-label={view === "report" ? "返回回報頁面" : "開啟回報總覽"}
                 className={`header-view-button ${view === "report" ? "is-return" : ""}`}
                 key={view}
                 onClick={() => setAppView(view)}
@@ -539,12 +583,10 @@ export function RoadReportApp() {
               >
                 {view === "report" ? (
                   <ArrowLeft aria-hidden="true" size={18} strokeWidth={2.4} />
-                ) : view === "overview" ? (
-                  <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
                 ) : (
-                  <List aria-hidden="true" size={18} strokeWidth={2.4} />
+                  <MapPinned aria-hidden="true" size={18} strokeWidth={2.4} />
                 )}
-                <span>{view === "report" ? "回報" : view === "overview" ? "總覽" : "進度"}</span>
+                <span>{view === "report" ? "回報" : "總覽"}</span>
               </button>
             ))}
           </div>
@@ -554,15 +596,8 @@ export function RoadReportApp() {
           <ReportOverview
             {...overview}
             items={items}
+            schoolProgress={schoolProgress}
             onRetry={() => setOverviewReload((current) => current + 1)}
-          />
-        ) : appView === "tracking" ? (
-          <CaseTracking
-            reports={overview.reports}
-            loading={overview.loading}
-            reportsError={overview.error}
-            initialCaseId={submitTracking?.id ?? null}
-            onRetryReports={() => setOverviewReload((current) => current + 1)}
           />
         ) : (
           <>
@@ -798,11 +833,9 @@ export function RoadReportApp() {
               {submitState === "success" && submitTracking ? (
                 <>
                   <br />
-                  <a className="case-link" href={schoolCaseUrl(submitTracking.id)} rel="noopener noreferrer" target="_blank">
-                    {submitTracking.number ? `臺大案號 ${submitTracking.number} · ` : ""}查看臺大最新進度
-                  </a>
-                  <button className="tracking-inline-button" onClick={() => setAppView("tracking")} type="button">
-                    在本站追蹤
+                  {submitTracking.number ? `臺大案號 ${submitTracking.number}` : "已取得臺大案件"}
+                  <button className="overview-inline-button" onClick={() => setAppView("overview")} type="button">
+                    在總覽查看進度
                   </button>
                 </>
               ) : null}
@@ -859,8 +892,9 @@ function ReportOverview({
   loading,
   error,
   items,
+  schoolProgress,
   onRetry,
-}: OverviewState & { items: RepairItem[]; onRetry: () => void }) {
+}: OverviewState & { items: RepairItem[]; schoolProgress: Record<string, SchoolProgress>; onRetry: () => void }) {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
   const selectedReport = reports.find((report) => report.id === selectedId) ?? reports[0];
@@ -894,17 +928,21 @@ function ReportOverview({
             selectedId={selectedReport.id}
             onSelect={setSelectedId}
           />
-          <OverviewReportCard className="overview-report-panel" report={selectedReport} items={items} live />
+          <OverviewReportCard className="overview-report-panel" report={selectedReport} items={items} schoolProgress={schoolProgress} />
         </div>
       ) : (
         <section className="overview-list" aria-label="回報列表">
           {reports.map((report) => (
-            <OverviewReportCard className="overview-list-card" key={report.id} report={report} items={items} />
+            <OverviewReportCard className="overview-list-card" key={report.id} report={report} items={items} schoolProgress={schoolProgress} />
           ))}
         </section>
       )}
 
-      <nav className="overview-view-switch" aria-label="總覽顯示模式">
+      <div className="overview-view-switch">
+        <button onClick={onRetry} type="button">
+          <RefreshCw aria-hidden="true" size={18} />
+          更新進度
+        </button>
         <button
           aria-pressed={viewMode === "map"}
           className={viewMode === "map" ? "is-active" : ""}
@@ -923,7 +961,7 @@ function ReportOverview({
           <List aria-hidden="true" size={18} />
           列表模式
         </button>
-      </nav>
+      </div>
     </section>
   );
 }
@@ -931,31 +969,43 @@ function ReportOverview({
 function OverviewReportCard({
   report,
   items,
+  schoolProgress,
   className,
-  live = false,
 }: {
   report: ReportSummary;
   items: RepairItem[];
+  schoolProgress: Record<string, SchoolProgress>;
   className: string;
-  live?: boolean;
 }) {
   const itemLabel = items.find((item) => item.value === report.itemId)?.label;
+  const progress = report.schoolCaseId ? schoolProgress[report.schoolCaseId] : null;
+  const progressNote = progress && progress !== "error"
+    ? [progress.unacceptedReason, progress.returnedReason].filter(Boolean).join("；")
+    : "";
 
   return (
-    <article aria-live={live ? "polite" : undefined} className={`overview-report-card ${className}`}>
+    <article className={`overview-report-card ${className}`}>
       <img alt={`${report.title}照片`} loading="lazy" src={report.photoUrl} />
       <div>
         <div className="overview-report-meta">
-          <span>{report.status}</span>
+          {!report.schoolCaseId ? <span>{report.status}</span> : null}
           {itemLabel ? <span>{formatRepairItemLabel(itemLabel)}</span> : null}
           <span>{formatReportDate(report.reportedAt)}</span>
         </div>
         <h2>{report.title}</h2>
         <p>{report.description}</p>
         {report.schoolCaseId ? (
-          <a className="case-link" href={schoolCaseUrl(report.schoolCaseId)} rel="noopener noreferrer" target="_blank">
-            {report.schoolCaseNumber ? `臺大案號 ${report.schoolCaseNumber} · ` : ""}查看臺大最新進度
-          </a>
+          progress === "error" ? (
+            <a aria-label={`校方狀態暫時無法取得，開啟臺大案件 ${report.schoolCaseNumber ?? report.schoolCaseId}`} className="case-link" href={schoolCaseUrl(report.schoolCaseId)} rel="noopener noreferrer" target="_blank">
+              校方狀態暫時無法取得，前往臺大查看
+            </a>
+          ) : progress ? (
+            <a aria-label={`${progress.status}${progressNote ? `｜${progressNote}` : ""}，臺大案件 ${report.schoolCaseNumber ?? report.schoolCaseId}`} className="case-link case-progress" href={schoolCaseUrl(report.schoolCaseId)} rel="noopener noreferrer" target="_blank">
+              {progress.status}{progressNote ? `｜${progressNote}` : ""}
+            </a>
+          ) : (
+            <span className="case-progress-pending">查詢校方狀態中…</span>
+          )
         ) : null}
       </div>
     </article>

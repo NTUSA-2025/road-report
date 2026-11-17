@@ -10,6 +10,8 @@ export type PublicRepairCase = {
   location: string;
   item: string;
   reason: string;
+  unacceptedReason: string;
+  returnedReason: string;
   detailUrl: string;
 };
 
@@ -48,6 +50,8 @@ export function parsePublicCase(caseId: string, html: string): PublicRepairCase 
     location: detailField(html, "報修地點"),
     item: detailField(html, "申報項目"),
     reason: detailField(html, "申報事由"),
+    unacceptedReason: detailSection(html, "不受理說明"),
+    returnedReason: detailSection(html, "退件說明"),
     detailUrl: detailUrl(caseId),
   };
 }
@@ -100,6 +104,11 @@ function detailUrl(caseId: string) {
 
 function detailField(html: string, label: string) {
   const pattern = new RegExp(`<label\\b[^>]*>\\s*${label}\\s*<\\/label>\\s*<div\\b[^>]*>([\\s\\S]*?)<\\/div>`, "i");
+  return htmlText(html.match(pattern)?.[1] ?? "");
+}
+
+function detailSection(html: string, label: string) {
+  const pattern = new RegExp(`<h3\\b[^>]*>\\s*${label}\\s*<\\/h3>([\\s\\S]*?)<\\/div>`, "i");
   return htmlText(html.match(pattern)?.[1] ?? "");
 }
 
