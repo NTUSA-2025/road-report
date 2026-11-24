@@ -2,26 +2,28 @@
 
 手機優先的臺大道路狀況回報工具。使用者可以用地圖標記位置、拍照或選擇照片、讀取 JPEG EXIF 拍攝日期與 GPS 座標，最後透過後端 proxy 將資料送到 NTU 公共設施報修表單。
 
-本專案採 Cloudflare Pages 原生架構：
+本專案是單一 Cloudflare Worker：
 
-- `src/`：Vite + React 前端
-- `functions/`：Cloudflare Pages Functions API
-- `dist/`：Pages 靜態輸出目錄
+- `src/`：Vite + React 前端，build 到 `dist/`，由 Worker 以 Static Assets 提供
+- `worker/index.ts`：Worker 入口，`fetch` 處理 `/api/*`，`scheduled` 執行排程同步
+- `worker/api/`：各 API handler；`worker/lib/`：NTU 表單、儲存與共用工具
+- `worker/sync.ts`：Cron 同步臺大案件狀態
+- `wrangler.jsonc`：Worker、Static Assets、KV、R2 與 Cron 設定
 
 ## 功能
 
 - 地圖預設在臺大校園，支援手機定位與點選地圖更新座標
-- 回報狀況總覽讀取 D1 最近 100 件回報，以地圖呈現位置、描述與 R2 照片；總件數來自 D1
-- 地圖和回報列表載入後，直接讀取已連結案件的臺大公開詳細頁，在卡片下方以階段列標示當下狀態與不受理／退件說明（如有）
-- 手機拍照按鈕位於照片區中下方，使用 `capture="environment"`
+- 回報狀況總覽只讀本站 KV：顯示最新 100 件回報的位置、描述與 R2 照片，以及累計總件數
+- 已連結臺大案件的回報，卡片下方以階段列標示校方狀態與不受理／退件說明（如有）；狀態由排程定期更新
+- 手機拍照按鈕位於照片區下方，使用 `capture="environment"`
 - 讀取 JPEG EXIF 的拍攝日期與 GPS 座標，沒有 EXIF 時改用檔案時間與手動定位
 - 後端保留 NTU 表單 session、CSRF token 與 `CapId`
 - Captcha 以 proxy 圖片顯示，使用者手動輸入 5 碼；目前資料庫模式仍顯示與要求輸入，但不送往 NTU 驗證
 - 位置送出使用必填的 `LocationNote`、`Latitude`、`Longitude`，後端再格式化成 NTU 表單的 `Location`（例：`傅鐘前方柏油路：25.017340, 121.539750`）
 - 送出欄位對應 NTU 表單的 `ApplicantPhone`、`Location`、`BrokenItemId`、`Reason`、`ImageFiles`、拍攝日期與 `CapAns`
-- 送出後把回報欄位存入 D1、照片存入 R2，並在 KV 建立不含聯絡資訊的報修索引
-- 轉送臺大成功時，擷取詳細頁 ID 與正式案號；總覽顯示校方狀態並可連到公開詳細頁
-- 聯絡步驟可選擇是否讓本站儲存姓名、電話與 E-mail；預設關閉，關閉時 D1 的三個欄位均存 `opt-out`
+- 送出後把回報存入 KV、照片存入 R2
+- 轉送臺大成功時，擷取詳細頁 ID、正式案號與當下狀態；總覽可連到公開詳細頁
+- 聯絡步驟可選擇是否讓本站儲存姓名、電話與 E-mail；預設關閉，關閉時三個欄位均存 `opt-out`
 
 ## 介面配色
 
@@ -48,69 +50,69 @@
 
 ```bash
 npm install
-npm run build
+npm test          # build + typecheck + node:test
+npm run lint
 ```
 
-本機全端測試使用 `npm run dev:pages`，會啟動 Pages 靜態頁面與 Functions，並以 `ROAD_REPORT_KV`、`road-report-db`、`road-report-r2` 這三個 binding 名稱建立本機 KV、D1、R2。資料保存在忽略版控的 `.wrangler/state`，與 Dashboard 的正式資源分開。首次送出前先在本機 D1 建表：
+本機環境變數分成兩個檔案，皆不進版控：
 
-本機 Wrangler 執行環境目前支援的最新 compatibility date 是 `2026-05-22`，因此 `dev:pages` 與 `wrangler.local.jsonc` 使用這個日期；Dashboard 的 Production／Preview 設定仍為 `2026-09-14`。
+- `.dev.vars`（範本 `.dev.vars.example`）：Worker 使用的 `CARTO_API_KEY`、`REPAIR_SUBMIT_ENABLED`
+- `.env`（範本 `.env.example`）：Vite build 使用的 `VITE_DEBUG_OUTPUT`
+
+`CARTO_API_KEY` 是 CARTO Basemaps API key；本站 tile proxy 會依 CARTO Basemaps 新規格把它轉送為 `key` query parameter。需要檢查地圖 tile proxy 時，可暫時把 `VITE_DEBUG_OUTPUT=true` 後重新 build；production 預設應維持關閉。
+
+本機全端測試使用 `npm run dev:worker`：先 build 前端，再以 `wrangler dev` 啟動 Worker（`http://localhost:8787`）。KV 與 R2 都是本機模擬，資料保存在忽略版控的 `.wrangler/state`，不需要建表。手動觸發排程：
 
 ```bash
-npx wrangler d1 execute road-report-db --config=wrangler.local.jsonc --local --persist-to=.wrangler/state --file=migrations/0001_reports.sql
-npx wrangler d1 execute road-report-db --config=wrangler.local.jsonc --local --persist-to=.wrangler/state --file=migrations/0002_school_case_id.sql
-npm run dev:pages
+curl "http://localhost:8787/__scheduled?cron=17+*+*+*+*"
 ```
 
-建立 `.env` 並填入 CARTO API key：
+本機 wrangler 目前支援的最新 compatibility date 是 `2026-05-22`，`wrangler.jsonc` 本機與正式環境共用這個日期。
+
+## 資料儲存
+
+| 類型 | Binding | Cloudflare 資源 | 用途 |
+| --- | --- | --- | --- |
+| KV | `REPORTS` | `ROAD_REPORT_KV` | 回報資料與總覽索引 |
+| R2 | `PHOTOS` | `road-report-r2` | 以 `reports/{id}/photo` 為 key 儲存原始照片 |
+
+KV 內有兩種 key：
+
+- `report:{id}`：單筆完整紀錄，包含回報欄位、照片 metadata、聯絡資訊（或 `opt-out`）、臺大案號／詳細頁 ID、校方狀態與 `schoolCheckedAt`
+- `reports:index`：`{ reports: [...] }`，由新到舊排列，只放公開欄位與校方狀態；總覽每次只讀這一個 key
+
+送出時依序寫入 R2 照片、`report:{id}`、`reports:index`。紀錄寫入失敗會刪除剛上傳的照片；索引寫入失敗只記 log，由排程補回。KV 為最終一致，新回報可能需要約一分鐘才在其他地區的總覽出現。
+
+公開 API `GET /api/reports` 只回傳回報項目、描述、位置、狀態、時間與校方進度，不回傳姓名、電話、Email、NTU session 或驗證碼；照片由 `GET /api/reports/{id}/photo` 直接讀 R2。
+
+## 校方進度排程
+
+`wrangler.jsonc` 的 Cron（`17 * * * *`）每小時執行 [`worker/sync.ts`](worker/sync.ts)：
+
+1. 列出所有 `report:` key，把不在 `reports:index` 裡的紀錄補回索引（略過缺少必要欄位的舊格式 key）。
+2. 挑出有臺大案件 ID、尚未結束（不是 `已結案`、`專簽結案`、`已不受理`）、且超過 23 小時未查詢的案件，每次最多 20 筆、同時 2 筆，讀取臺大公開詳細頁。
+3. 狀態有變才改寫 `report:{id}`；索引只在有變動時寫回一次。讀取失敗時保留舊狀態，只更新查詢時間。
+
+因此每件進行中的案件約一天查一次，總覽本身不會連到臺大網站。階段列中「已不受理」走獨立的結束分支，「專簽結案」保留校方原文；階段列不表示完成百分比或歷史時間。尚未取得狀態的案件顯示臺大詳細頁連結；未連結臺大案件的回報顯示本站的「已送出」。
+
+## 送出模式
+
+[`worker/lib/feature-flags.ts`](worker/lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：仍取得學校 session、顯示 captcha 並要求輸入 5 碼，但**不把報修表單 POST 到學校，也不向學校驗證答案**；回報直接寫入 KV 與 R2，沿用 `submitted` 狀態，沒有臺大案號或進度連結。資料庫模式不受 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會轉送學校並由 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
+
+一般模式只在 NTU 表單接受送出後儲存。成功回應會重新導向 `/repairservice2/PublicRepair/Details?caseId=...`；本站從詳細頁讀取案號與狀態，並保存 ID。詳細頁暫時讀不到時仍保存 ID，由排程補上其餘資料。KV 或 R2 binding 缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 KV 或 R2。
+
+## 部署
+
+本站不將 Cloudflare 資源 ID 寫入公開 repo：`wrangler.jsonc` 的 R2 以 bucket 名稱指定；KV 不寫 id，第一次 `wrangler deploy` 時在互動提示中選擇既有的 `ROAD_REPORT_KV`，之後的部署會沿用已部署 Worker 上的同名 binding。
 
 ```bash
-CARTO_API_KEY=your-carto-api-key
-VITE_DEBUG_OUTPUT=false
+npm run deploy                          # build 後 wrangler deploy
+npx wrangler secret put CARTO_API_KEY   # 第一次部署後設定
 ```
 
-這裡使用的是 CARTO Basemaps API key；本站 tile proxy 會依 CARTO Basemaps 新規格把它轉送為 `key` query parameter。
+`REPAIR_SUBMIT_ENABLED` 寫在 `wrangler.jsonc` 的 `vars`。也可在 Dashboard 以 Workers Builds 連接 GitHub，Build command 設為 `npm run build`、Deploy command 設為 `npx wrangler deploy`（第一次互動部署後再接上，KV binding 才能沿用）。
 
-需要檢查地圖 tile proxy 時，可暫時把 `VITE_DEBUG_OUTPUT=true` 後重新 build；production 預設應維持關閉。
-
-## Cloudflare Pages
-
-Cloudflare Pages 設定：
-
-- Project name: `road-report`
-- Build command: `npm run build`
-- Build output directory: `dist`
-- 在 Cloudflare Pages Dashboard 管理專案設定與資源 binding
-- Production 與 Preview 分別設定 `CARTO_API_KEY`、`REPAIR_SUBMIT_ENABLED`，以及需要使用的 KV、D1、R2 binding
-- Compatibility date: `2026-09-14`；Compatibility flag: `nodejs_compat`
-
-Pages Functions 使用的 Dashboard binding **變數名稱**如下。名稱須完全一致，且 Production、Preview 都要設定：
-
-| 類型 | 變數名稱 | 用途 |
-| --- | --- | --- |
-| D1 | `road-report-db` | `reports` 表，儲存回報內容、照片索引、臺大案號與詳細頁 ID。 |
-| R2 | `road-report-r2` | 以 `reports/{id}/photo` 為 key 儲存原始照片。 |
-| KV | `ROAD_REPORT_KV` | 以 `report:{id}` 為 key 儲存不含聯絡資訊的報修狀態索引。 |
-
-D1 建表與案號欄位 SQL 分別在 [`migrations/0001_reports.sql`](migrations/0001_reports.sql)、[`migrations/0002_school_case_id.sql`](migrations/0002_school_case_id.sql)；**部署網站不會自動執行 migration**。本機使用上方的 `--local` 指令。正式 D1 依序執行下列指令，這會修改 Cloudflare 上的資料庫；請先確認登入的帳號與資料庫名稱：
-
-```bash
-npx wrangler d1 execute road-report-db --remote --file=migrations/0001_reports.sql
-npx wrangler d1 execute road-report-db --remote --file=migrations/0002_school_case_id.sql
-```
-
-`wrangler.local.jsonc` 只供本機 D1 建表使用，其中 `database_id` 是固定的本機識別值，不是正式資源 ID。正式與 Preview binding 仍由 Dashboard 管理。
-
-目前 [`functions/_lib/feature-flags.ts`](functions/_lib/feature-flags.ts) 的寫死開關 `FORWARD_TO_NTU = false` 會開放資料庫模式送出：仍取得學校 session、顯示 captcha 並要求輸入 5 碼，但**不把報修表單 POST 到學校，也不向學校驗證答案**；回報直接寫入 D1、R2、KV，沿用 `submitted` 狀態，沒有臺大案號或進度連結。資料庫模式不受 Dashboard 的 `REPAIR_SUBMIT_ENABLED` 影響。之後改為 `true` 時，才會轉送學校並由 `REPAIR_SUBMIT_ENABLED` 控制送出；先前記錄的回報不會自動補送。
-
-一般模式只在 NTU 表單接受送出後儲存。成功回應會重新導向 `/repairservice2/PublicRepair/Details?caseId=...`；本站從詳細頁讀取案號，並保存 ID 與案號。案號暫時讀不到時仍保存詳細頁 ID，讓使用者可直接查看臺大進度。D1、R2、KV binding 或資料表缺失時，API 會在送給 NTU 前回傳錯誤；如果 NTU 已接受但本站寫入失敗，畫面會明確告知「學校已收到」並提醒不要重複送出。`CapAns`、NTU session 與 CSRF token 不會寫入 D1、R2 或 KV。
-
-`npm run build` 會產生 Vite 靜態輸出到 `dist/`。API 由 Cloudflare Pages 自動讀取 `functions/`，不需要 `_worker.js`。
-
-本站不將 Cloudflare 資源 ID 寫入公開 repo。Pages 專案設定與 KV、D1、R2 binding 由 Dashboard 管理；新增或調整 binding 後需重新部署。`CARTO_API_KEY` 的值也只放在 Dashboard secret 與本機未追蹤的 `.env`。
-
-總覽使用 `GET /api/reports` 讀取最新 100 件回報與資料庫總件數，並以 `GET /api/reports/{id}/photo` 取得照片。公開查詢只取回報項目、描述、位置、狀態與時間；不回傳姓名、電話、Email、NTU session 或驗證碼。
-
-總覽載入已連結案件後，使用 `GET /api/repair/progress?caseId=...` 讀取臺大公開詳細頁；最多同時查詢四筆。地圖與列表卡片下方以階段列標示校方當下狀態，並在有內容時顯示不受理或退件說明。「已不受理」走獨立的結束分支，「專簽結案」保留校方原文；階段列不表示完成百分比或歷史時間。進入總覽時會查詢一次，沒有排程，查詢結果不寫回 D1。校方頁面無法讀取時，卡片會顯示查詢失敗並提供原始頁面連結。未連結臺大案件的回報仍顯示本站的「已送出」。
+從舊版（Pages + D1）搬資料時，[`scripts/migrate-local-report.mjs`](scripts/migrate-local-report.mjs) 會把本機 `.wrangler/state` 裡舊 D1 的回報轉成 KV 格式、匯出照片，並印出上傳用的 `wrangler --remote` 指令；腳本本身不連線到 Cloudflare。
 
 總覽使用 `?view=overview` 記錄目前視圖；重新整理會留在總覽，瀏覽器上一頁／下一頁也會同步切換視圖。
 
