@@ -23,7 +23,7 @@ test("uses a Cloudflare Worker with static assets", async () => {
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../.dev.vars.example", import.meta.url), "utf8"),
     readFile(new URL("../src/vite-env.d.ts", import.meta.url), "utf8"),
-    readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    readFile(new URL("../wrangler.toml", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../worker/lib/env.ts", import.meta.url), "utf8"),
     readFile(new URL("../worker/lib/ntu.ts", import.meta.url), "utf8"),
@@ -99,18 +99,18 @@ test("uses a Cloudflare Worker with static assets", async () => {
   assert.deepEqual(favicon.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   assert.match(html, /href="\/favicon.png"/);
   assert.match(html, /href="\/favicon.ico"/);
-  await assert.rejects(access(new URL("../wrangler.toml", import.meta.url)));
+  await assert.rejects(access(new URL("../wrangler.jsonc", import.meta.url)));
   await assert.rejects(access(new URL("../wrangler.local.jsonc", import.meta.url)));
   await assert.rejects(access(new URL("../functions", import.meta.url)));
   await assert.rejects(access(new URL("../migrations", import.meta.url)));
-  assert.match(wranglerConfig, /"main": "worker\/index\.ts"/);
-  assert.match(wranglerConfig, /"directory": "\.\/dist"/);
-  assert.match(wranglerConfig, /"not_found_handling": "single-page-application"/);
-  assert.match(wranglerConfig, /"run_worker_first": \["\/api\/\*", "\/__scheduled"\]/);
-  assert.match(wranglerConfig, /"kv_namespaces": \[\{ "binding": "REPORTS" \}\]/);
-  assert.match(wranglerConfig, /"bucket_name": "road-report-r2"/);
-  assert.match(wranglerConfig, /"crons": \["17 \* \* \* \*"\]/);
-  assert.doesNotMatch(wranglerConfig, /d1_databases|database_id|"id":/);
+  assert.match(wranglerConfig, /^main = "worker\/index\.ts"$/m);
+  assert.match(wranglerConfig, /^directory = "\.\/dist"$/m);
+  assert.match(wranglerConfig, /^not_found_handling = "single-page-application"$/m);
+  assert.match(wranglerConfig, /^run_worker_first = \["\/api\/\*", "\/__scheduled"\]$/m);
+  assert.match(wranglerConfig, /^\[\[kv_namespaces\]\]\nbinding = "REPORTS"\n\n/m);
+  assert.match(wranglerConfig, /^bucket_name = "road-report-r2"$/m);
+  assert.match(wranglerConfig, /^crons = \["17 \* \* \* \*"\]$/m);
+  assert.doesNotMatch(wranglerConfig, /d1_databases|database_id|^id = /m);
   assert.match(worker, /async scheduled\(/);
   assert.match(worker, /env\.ASSETS\.fetch\(request\)/);
   assert.doesNotMatch(worker, /repair\/progress/);

@@ -8,7 +8,7 @@
 - `worker/index.ts`：Worker 入口，`fetch` 處理 `/api/*`，`scheduled` 執行排程同步
 - `worker/api/`：各 API handler；`worker/lib/`：NTU 表單、儲存與共用工具
 - `worker/sync.ts`：Cron 同步臺大案件狀態
-- `wrangler.jsonc`：Worker、Static Assets、KV、R2 與 Cron 設定
+- `wrangler.toml`：Worker、Static Assets、KV、R2 與 Cron 設定
 
 ## 功能
 
@@ -67,7 +67,7 @@ npm run lint
 curl "http://localhost:8787/__scheduled?cron=17+*+*+*+*"
 ```
 
-本機 wrangler 目前支援的最新 compatibility date 是 `2026-05-22`，`wrangler.jsonc` 本機與正式環境共用這個日期。
+本機 wrangler 目前支援的最新 compatibility date 是 `2026-05-22`，`wrangler.toml` 本機與正式環境共用這個日期。
 
 ## 資料儲存
 
@@ -87,7 +87,7 @@ KV 內有兩種 key：
 
 ## 校方進度排程
 
-`wrangler.jsonc` 的 Cron（`17 * * * *`）每小時執行 [`worker/sync.ts`](worker/sync.ts)：
+`wrangler.toml` 的 Cron（`17 * * * *`）每小時執行 [`worker/sync.ts`](worker/sync.ts)：
 
 1. 列出所有 `report:` key，把不在 `reports:index` 裡的紀錄補回索引（略過缺少必要欄位的舊格式 key）。
 2. 挑出有臺大案件 ID、尚未結束（不是 `已結案`、`專簽結案`、`已不受理`）、且超過 23 小時未查詢的案件，每次最多 20 筆、同時 2 筆，讀取臺大公開詳細頁。
@@ -103,14 +103,14 @@ KV 內有兩種 key：
 
 ## 部署
 
-本站不將 Cloudflare 資源 ID 寫入公開 repo：`wrangler.jsonc` 的 R2 以 bucket 名稱指定；KV 不寫 id，第一次 `wrangler deploy` 時在互動提示中選擇既有的 `ROAD_REPORT_KV`，之後的部署會沿用已部署 Worker 上的同名 binding。
+本站不將 Cloudflare 資源 ID 寫入公開 repo：`wrangler.toml` 的 R2 以 bucket 名稱指定；KV 不寫 id，第一次 `wrangler deploy` 時在互動提示中選擇既有的 `ROAD_REPORT_KV`，之後的部署會沿用已部署 Worker 上的同名 binding。
 
 ```bash
 npm run deploy                          # build 後 wrangler deploy
 npx wrangler secret put CARTO_API_KEY   # 第一次部署後設定
 ```
 
-`REPAIR_SUBMIT_ENABLED` 寫在 `wrangler.jsonc` 的 `vars`。也可在 Dashboard 以 Workers Builds 連接 GitHub，Build command 設為 `npm run build`、Deploy command 設為 `npx wrangler deploy`（第一次互動部署後再接上，KV binding 才能沿用）。
+`REPAIR_SUBMIT_ENABLED` 寫在 `wrangler.toml` 的 `vars`。也可在 Dashboard 以 Workers Builds 連接 GitHub，Build command 設為 `npm run build`、Deploy command 設為 `npx wrangler deploy`（第一次互動部署後再接上，KV binding 才能沿用）。
 
 從舊版（Pages + D1）搬資料時，[`scripts/migrate-local-report.mjs`](scripts/migrate-local-report.mjs) 會把本機 `.wrangler/state` 裡舊 D1 的回報轉成 KV 格式、匯出照片，並印出上傳用的 `wrangler --remote` 指令；腳本本身不連線到 Cloudflare。
 
