@@ -133,6 +133,10 @@ test("uses a Cloudflare Worker with static assets", async () => {
   assert.match(refresh, /captchaProxyUrl: captchaUrl\(\)/);
   assert.match(submit, /if \(FORWARD_TO_NTU && !isRepairSubmitEnabled\(env\)\)/);
   assert.match(submit, /textValue\(incoming, "CapAns"\)\.length !== 5/);
+  assert.match(submit, /incoming\.set\("BrokenItemId", ROAD_ITEM_ID\)/);
+  assert.match(submit, /const ROAD_ITEM_ID = "5"/);
+  assert.doesNotMatch(app, /setItemId|formData\.set\("BrokenItemId"/);
+  assert.match(app, /<div className="field-static">路面<\/div>/);
   assert.match(submit, /"Latitude"/);
   assert.match(submit, /"Longitude"/);
   assert.match(submit, /"LocationNote"/);

@@ -125,7 +125,6 @@ export function RoadReportApp() {
     coordinates: null,
   });
   const [description, setDescription] = useState("");
-  const [itemId, setItemId] = useState("5");
   const [locationNote, setLocationNote] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -428,7 +427,6 @@ export function RoadReportApp() {
     formData.set("SaveContactInfo", String(saveContactInfo));
     formData.set("Location", formatCoordinateValue(coords));
     formData.set("LocationNote", locationNote);
-    formData.set("BrokenItemId", itemId);
     formData.set("Reason", description);
     formData.set("CapAns", captchaAnswer.trim());
     formData.set("ImageTakenYear", `${takenDate.getFullYear()}`);
@@ -504,14 +502,8 @@ export function RoadReportApp() {
       return "請先拍照或上傳照片。";
     }
 
-    if (step === 1) {
-      if (!itemId.trim()) {
-        return "請先選擇申報項目。";
-      }
-
-      if (!description.trim()) {
-        return "請先填寫道路狀況描述。";
-      }
+    if (step === 1 && !description.trim()) {
+      return "請先填寫道路狀況描述。";
     }
 
     if (step === 2) {
@@ -666,20 +658,10 @@ export function RoadReportApp() {
 
             {currentStep === 1 ? (
               <section className="app-card details-card" aria-label="報修現況">
-                <label className="field-label">
+                <div className="field-label">
                   申報項目
-                  <select
-                    onChange={(event) => setItemId(event.target.value)}
-                    required
-                    value={itemId}
-                  >
-                    {items.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {formatRepairItemLabel(item.label)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <div className="field-static">路面</div>
+                </div>
 
                 <label className="field-label">
                   發生什麼狀況

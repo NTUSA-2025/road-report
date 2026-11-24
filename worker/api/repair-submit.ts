@@ -11,12 +11,14 @@ import { reportStorage, saveReport, type ReportStorage, type SchoolCase } from "
 import { caseIdFromRedirect, fetchPublicCase } from "../lib/ntu-case";
 import type { RouteHandler } from "../lib/env";
 
+// This site only takes road reports, so the NTU item is fixed to 路面 regardless of what the client sends.
+const ROAD_ITEM_ID = "5";
+
 const REQUIRED_FIELDS = [
   "ApplicantPhone",
   "Latitude",
   "Longitude",
   "LocationNote",
-  "BrokenItemId",
   "Reason",
   "CapAns",
 ];
@@ -39,6 +41,7 @@ export const submitRepair: RouteHandler = async (request, env) => {
   }
 
   const incoming = await request.formData();
+  incoming.set("BrokenItemId", ROAD_ITEM_ID);
   const missing = REQUIRED_FIELDS.find((field) => !`${incoming.get(field) ?? ""}`.trim());
   const image = incoming.get("ImageFiles");
   const coordinates = coordinatesValue(incoming);

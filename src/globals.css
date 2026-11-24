@@ -401,6 +401,19 @@ textarea:focus-visible,
   font-weight: 650;
 }
 
+.field-static {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 13px 14px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
 .two-fields {
   display: grid;
   gap: 20px;
