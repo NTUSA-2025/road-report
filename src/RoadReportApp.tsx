@@ -864,14 +864,38 @@ function ReportOverview({
 }: OverviewState & { items: RepairItem[]; onRetry: () => void }) {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [progressFilter, setProgressFilter] = useState("");
   const selectedReport = reports.find((report) => report.id === selectedId) ?? reports[0];
+  const months = [...new Set(reports.map(reportMonth).filter(Boolean))].sort().reverse();
+  const progressOptions = [...new Set(reports.map(reportProgress))].sort(
+    (a, b) => progressRank(a) - progressRank(b) || a.localeCompare(b),
+  );
+  const listedReports = reports.filter((report) =>
+    (!monthFilter || reportMonth(report) === monthFilter) &&
+    (!progressFilter || reportProgress(report) === progressFilter));
 
   return (
     <section className="overview-page" aria-label="回報狀況總覽">
       <div className="overview-summary" aria-label="回報摘要">
         <span>累計回報</span>
         <strong>{total}<small>件</small></strong>
-        {reports.length < total ? <p>顯示最新 {reports.length} 件</p> : null}
+        {viewMode === "list" && reports.length > 0 ? (
+          <div className="overview-filters">
+            <select aria-label="依回報月份篩選" onChange={(event) => setMonthFilter(event.target.value)} value={monthFilter}>
+              <option value="">全部月份</option>
+              {months.map((month) => (
+                <option key={month} value={month}>{month.replace("-", "/")}</option>
+              ))}
+            </select>
+            <select aria-label="依進度篩選" onChange={(event) => setProgressFilter(event.target.value)} value={progressFilter}>
+              <option value="">全部進度</option>
+              {progressOptions.map((progress) => (
+                <option key={progress} value={progress}>{progress}</option>
+              ))}
+            </select>
+          </div>
+        ) : reports.length < total ? <p>顯示最新 {reports.length} 件</p> : null}
       </div>
 
       {loading || error || !selectedReport ? (
@@ -890,9 +914,11 @@ function ReportOverview({
         </div>
       ) : (
         <section className="overview-list" aria-label="回報列表">
-          {reports.map((report) => (
+          {listedReports.length > 0 ? listedReports.map((report) => (
             <OverviewReportCard className="overview-list-card" key={report.id} report={report} items={items} />
-          ))}
+          )) : (
+            <p className="overview-list-empty" role="status">沒有符合篩選條件的回報。</p>
+          )}
         </section>
       )}
 
@@ -973,6 +999,24 @@ function OverviewReportCard({
       ) : null}
     </article>
   );
+}
+
+const PROGRESS_ORDER = ["已送出", "處理中", "已派工修繕", "已結案", "專簽結案", "已不受理"];
+
+function reportProgress(report: ReportSummary) {
+  return report.schoolProgress?.status || report.status;
+}
+
+function progressRank(progress: string) {
+  const rank = PROGRESS_ORDER.indexOf(progress);
+  return rank < 0 ? PROGRESS_ORDER.length : rank;
+}
+
+function reportMonth(report: ReportSummary) {
+  const date = new Date(report.reportedAt);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function caseStages(status: string) {

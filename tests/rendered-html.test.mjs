@@ -137,6 +137,9 @@ test("uses a Cloudflare Worker with static assets", async () => {
   assert.match(submit, /const ROAD_ITEM_ID = "5"/);
   assert.doesNotMatch(app, /setItemId|formData\.set\("BrokenItemId"/);
   assert.match(app, /<div className="field-static">路面<\/div>/);
+  assert.match(app, /aria-label="依回報月份篩選"/);
+  assert.match(app, /aria-label="依進度篩選"/);
+  assert.match(app, /viewMode === "list" && reports\.length > 0 \? \(\s*<div className="overview-filters">/);
   assert.match(submit, /"Latitude"/);
   assert.match(submit, /"Longitude"/);
   assert.match(submit, /"LocationNote"/);

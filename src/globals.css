@@ -642,13 +642,19 @@ textarea:focus-visible,
   margin: 0;
 }
 
-.overview-summary span {
+.overview-summary > span,
+.overview-summary > strong {
+  flex: none;
+  white-space: nowrap;
+}
+
+.overview-summary > span {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
-.overview-summary strong {
+.overview-summary > strong {
   color: var(--brand-dark);
   font-size: 1.75rem;
   font-weight: 750;
@@ -663,11 +669,45 @@ textarea:focus-visible,
   font-weight: 600;
 }
 
-.overview-summary p {
+.overview-summary > p {
   margin: 0 0 0 auto;
   color: var(--muted);
   font-size: 0.72rem;
   white-space: nowrap;
+}
+
+.overview-filters {
+  display: flex;
+  align-self: center;
+  gap: 6px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.overview-filters select {
+  min-width: 0;
+  max-width: 112px;
+  min-height: 34px;
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 28px 0 12px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23647079' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 11px center;
+  color: var(--foreground);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.overview-filters select:focus-visible {
+  outline-offset: 1px;
+}
+
+.overview-list-empty {
+  margin: 24px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
 }
 
 .overview-map-shell,
@@ -1094,6 +1134,8 @@ textarea:focus-visible,
   .app-header h1 { font-size: 1.05rem; }
   .step-viewport, .overview-page { padding-right: 14px; padding-left: 14px; }
   .overview-report-card { grid-template-columns: 52px minmax(0, 1fr); padding: 10px; gap: 9px; }
+  .overview-summary { gap: 8px; }
+  .overview-filters select { padding: 0 22px 0 9px; background-position: right 8px center; font-size: 0.7rem; }
   .overview-report-card img { width: 52px; height: 76px; }
 }
 
