@@ -111,6 +111,8 @@ npx wrangler secret put CARTO_API_KEY
 
 需要從本機手動部署時使用 `npm run deploy`（build 後 `wrangler deploy`）。
 
+`wrangler.toml` 關閉了 `*.workers.dev` 網域與 preview URL（`workers_dev = false`、`preview_urls = false`），網站只能透過在 Dashboard 綁定的自訂網域或 route 存取；Cron 不受影響。
+
 從舊版（Pages + D1）搬資料時，[`scripts/migrate-local-report.mjs`](scripts/migrate-local-report.mjs) 會把本機 `.wrangler/state` 裡舊 D1 的回報轉成 KV 格式、匯出照片，並印出上傳用的 `wrangler --remote` 指令；腳本本身不連線到 Cloudflare。
 
 總覽使用 `?view=overview` 記錄目前視圖；重新整理會留在總覽，瀏覽器上一頁／下一頁也會同步切換視圖。

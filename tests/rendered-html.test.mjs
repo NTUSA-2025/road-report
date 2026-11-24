@@ -104,6 +104,8 @@ test("uses a Cloudflare Worker with static assets", async () => {
   await assert.rejects(access(new URL("../functions", import.meta.url)));
   await assert.rejects(access(new URL("../migrations", import.meta.url)));
   assert.match(wranglerConfig, /^main = "worker\/index\.ts"$/m);
+  assert.match(wranglerConfig, /^workers_dev = false$/m);
+  assert.match(wranglerConfig, /^preview_urls = false$/m);
   assert.match(wranglerConfig, /^directory = "\.\/dist"$/m);
   assert.match(wranglerConfig, /^not_found_handling = "single-page-application"$/m);
   assert.match(wranglerConfig, /^run_worker_first = \["\/api\/\*", "\/__scheduled"\]$/m);
