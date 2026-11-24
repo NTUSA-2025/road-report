@@ -1,6 +1,5 @@
 const DETAILS_PATH = "/repairservice2/PublicRepair/Details";
 const DETAILS_URL = `https://my.ntu.edu.tw${DETAILS_PATH}`;
-const LIST_URL = "https://my.ntu.edu.tw/repairservice2/PublicRepair/List";
 
 export type PublicRepairCase = {
   caseId: string;
@@ -67,33 +66,6 @@ export async function fetchPublicCase(caseId: string) {
     throw new Error(`NTU case details returned ${response.status}`);
   }
   return parsePublicCase(caseId, await response.text());
-}
-
-export async function fetchPublicCaseNumber(caseId: string) {
-  return (await fetchPublicCase(caseId)).caseNumber;
-}
-
-export async function findPublicCaseId(caseNumber: string) {
-  if (!/^[A-Z]{2}\d{6,}$/.test(caseNumber)) {
-    throw new Error("Invalid NTU case number");
-  }
-  const url = new URL(LIST_URL);
-  url.searchParams.set("keyWord", caseNumber);
-  url.searchParams.set("submitYear", "-1");
-  url.searchParams.set("submitMonth", "-1");
-  const response = await fetch(url, { headers: { accept: "text/html" } });
-  if (!response.ok) {
-    throw new Error(`NTU case list returned ${response.status}`);
-  }
-
-  const html = await response.text();
-  const links = html.matchAll(/<a\b[^>]*href="([^"]*\/PublicRepair\/Details\?caseId=[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi);
-  for (const link of links) {
-    if (htmlText(link[2]).toUpperCase() === caseNumber) {
-      return caseIdFromRedirect(link[1]);
-    }
-  }
-  return null;
 }
 
 function detailUrl(caseId: string) {

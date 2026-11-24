@@ -1,56 +1,29 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import ts from "typescript";
+import { fakeKv } from "./helpers/fake-kv.mjs";
+import { loadTs } from "./helpers/load-ts.mjs";
 
-const source = await readFile(new URL("../functions/_lib/report-storage.ts", import.meta.url), "utf8");
-const compiled = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const { checkReportSchema, findReportPhoto, listPublicReports, reportStorage, saveReport } = await import(
-  `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`
-);
-const caseSource = await readFile(new URL("../functions/_lib/ntu-case.ts", import.meta.url), "utf8");
-const caseCompiled = ts.transpileModule(caseSource, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const { caseIdFromRedirect, fetchPublicCaseNumber, findPublicCaseId, parsePublicCase } = await import(
-  `data:text/javascript;base64,${Buffer.from(caseCompiled).toString("base64")}`
-);
+const { listPublicReports, readIndex, reportStorage, saveReport } = await loadTs("../../worker/lib/report-storage.ts");
+const { caseIdFromRedirect, parsePublicCase } = await loadTs("../../worker/lib/ntu-case.ts");
 
-function fixture(saveContactInfo, failInsert = false) {
-  const writes = { row: null, photo: null, index: null, deletedKey: null };
-  const database = {
-    prepare(sql) {
-      if (sql.includes("SELECT")) {
-        return { first: async () => null };
-      }
-      assert.match(sql, /INSERT INTO reports/);
-      return {
-        bind(...values) {
-          writes.row = values;
-          return this;
-        },
-        async run() {
-          if (failInsert) throw new Error("D1 failed");
-          return { success: true };
-        },
-      };
-    },
-  };
+function fixture(saveContactInfo, { failRecord = false, kvEntries = {} } = {}) {
+  const writes = { photo: null, deletedKey: null };
+  const kv = fakeKv(kvEntries);
+  if (failRecord) {
+    const put = kv.put;
+    kv.put = async (key, value) => {
+      if (key.startsWith("report:")) throw new Error("KV failed");
+      return put(key, value);
+    };
+  }
   const storage = reportStorage({
-    "road-report-db": database,
-    "road-report-r2": {
+    REPORTS: kv,
+    PHOTOS: {
       async put(key, bytes, options) {
         writes.photo = { key, bytes, options };
       },
       async delete(key) {
         writes.deletedKey = key;
-      },
-    },
-    ROAD_REPORT_KV: {
-      async put(key, value) {
-        writes.index = { key, value };
       },
     },
   });
@@ -70,81 +43,95 @@ function fixture(saveContactInfo, failInsert = false) {
     ImageTakenDay: "5",
   })) form.set(key, value);
   const image = new File(["photo"], "street.jpg", { type: "image/jpeg" });
-  return { writes, storage, form, image };
+  return { kv, writes, storage, form, image };
 }
 
-test("saves report fields and replaces opted-out contacts in D1", async () => {
-  const { writes, storage, form, image } = fixture(false);
-  await checkReportSchema(storage.database);
-  const id = await saveReport(storage, form, image);
+test("requires both KV and R2 bindings", () => {
+  assert.throws(() => reportStorage({ REPORTS: fakeKv() }), /Missing report storage binding/);
+});
 
-  assert.equal(writes.row[0], id);
-  assert.deepEqual(writes.row.slice(2, 10), [
-    "5", "broken pavement", "front gate", 25.01734, 121.53975, 2026, 10, 5,
-  ]);
-  assert.deepEqual(writes.row.slice(14, 18), [0, "opt-out", "opt-out", "opt-out"]);
-  assert.deepEqual(writes.row.slice(18), [null, null]);
+test("saves the report record, photo and index entry, replacing opted-out contacts", async () => {
+  const { kv, writes, storage, form, image } = fixture(false);
+  const id = await saveReport(storage, form, image);
+  const record = kv.json(`report:${id}`);
+
+  assert.equal(record.id, id);
+  assert.equal(record.status, "submitted");
+  assert.deepEqual(
+    [record.itemId, record.reason, record.locationNote, record.latitude, record.longitude],
+    ["5", "broken pavement", "front gate", 25.01734, 121.53975],
+  );
+  assert.deepEqual(record.imageTaken, { year: 2026, month: 10, day: 5 });
+  assert.deepEqual(record.applicant, { name: "opt-out", phone: "opt-out", email: "opt-out" });
+  assert.equal(record.saveContactInfo, false);
+  assert.deepEqual(record.photo, { key: `reports/${id}/photo`, name: "street.jpg", contentType: "image/jpeg", size: 5 });
+  assert.equal(record.schoolCaseId, null);
   assert.equal(writes.photo.key, `reports/${id}/photo`);
   assert.equal(writes.photo.options.httpMetadata.contentType, "image/jpeg");
   assert.equal(new TextDecoder().decode(writes.photo.bytes), "photo");
-  assert.equal(writes.index.key, `report:${id}`);
-  assert.deepEqual(Object.keys(JSON.parse(writes.index.value)).sort(), ["createdAt", "id", "status"]);
-  assert.doesNotMatch(writes.index.value, /Test Name|0912345678|test@example.com/);
+
+  const [summary] = kv.json("reports:index").reports;
+  assert.equal(summary.id, id);
+  assert.equal(summary.locationNote, "front gate");
+  assert.doesNotMatch(kv.store.get("reports:index"), /applicant|opt-out|street\.jpg/);
 });
 
 test("stores trimmed contacts when consent is on", async () => {
-  const { writes, storage, form, image } = fixture(true);
-  await saveReport(storage, form, image);
-  assert.deepEqual(writes.row.slice(14, 18), [1, "Test Name", "0912345678", "test@example.com"]);
+  const { kv, storage, form, image } = fixture(true);
+  const id = await saveReport(storage, form, image);
+  const record = kv.json(`report:${id}`);
+  assert.equal(record.saveContactInfo, true);
+  assert.deepEqual(record.applicant, { name: "Test Name", phone: "0912345678", email: "test@example.com" });
+  assert.doesNotMatch(kv.store.get("reports:index"), /Test Name|0912345678|test@example.com/);
 });
 
-test("stores a verified NTU case number and detail id", async () => {
-  const { writes, storage, form, image } = fixture(false);
-  await saveReport(storage, form, image, { id: "171234", number: "MA11504000" });
-  assert.deepEqual(writes.row.slice(18), ["MA11504000", "171234"]);
+test("stores the NTU case and its progress in the record and index", async () => {
+  const { kv, storage, form, image } = fixture(false);
+  const progress = { status: "處理中", unacceptedReason: "", returnedReason: "" };
+  const id = await saveReport(storage, form, image, {
+    id: "171234", number: "MA11504000", progress, checkedAt: "2026-11-24T00:00:00.000Z",
+  });
+  for (const report of [kv.json(`report:${id}`), kv.json("reports:index").reports[0]]) {
+    assert.equal(report.schoolCaseId, "171234");
+    assert.equal(report.schoolCaseNumber, "MA11504000");
+    assert.deepEqual(report.schoolProgress, progress);
+    assert.equal(report.schoolCheckedAt, "2026-11-24T00:00:00.000Z");
+  }
 });
 
-test("removes an uploaded photo when D1 insert fails", async () => {
-  const { writes, storage, form, image } = fixture(false, true);
-  await assert.rejects(saveReport(storage, form, image), /D1 failed/);
+test("removes the uploaded photo when the record write fails", async () => {
+  const { kv, writes, storage, form, image } = fixture(false, { failRecord: true });
+  await assert.rejects(saveReport(storage, form, image), /KV failed/);
   assert.equal(writes.deletedKey, writes.photo.key);
-  assert.equal(writes.index, null);
+  assert.equal(kv.store.has("reports:index"), false);
 });
 
-test("public report queries exclude contact fields and find photos by report id", async () => {
-  const queries = [];
-  const database = {
-    prepare(sql) {
-      queries.push(sql);
-      return {
-        async first() {
-          return sql.includes("COUNT")
-            ? { total: 1 }
-            : { photo_key: "reports/report-id/photo", photo_content_type: "image/jpeg" };
-        },
-        async all() {
-          return { results: [{ id: "report-id", location_note: "front gate" }] };
-        },
-        bind(id) {
-          assert.equal(id, "report-id");
-          return this;
-        },
-      };
-    },
-  };
+test("keeps the index newest first and lists at most 100 reports with the full total", async () => {
+  const older = Array.from({ length: 120 }, (_, i) => ({
+    id: `r${i}`, createdAt: `2026-10-01T00:00:${String(i % 60).padStart(2, "0")}.${String(i).padStart(3, "0")}Z`,
+    status: "submitted", itemId: "5", reason: "x", locationNote: `n${i}`, latitude: 25, longitude: 121,
+    schoolCaseId: null, schoolCaseNumber: null, schoolProgress: null, schoolCheckedAt: null,
+  }));
+  const { kv, storage, form, image } = fixture(false, {
+    kvEntries: { "reports:index": { reports: [...older, { id: "legacy", createdAt: "2026-10-05", status: "submitted" }] } },
+  });
+  const id = await saveReport(storage, form, image);
 
-  const result = await listPublicReports(database);
-  const photo = await findReportPhoto(database, "report-id");
+  const index = await readIndex(kv);
+  assert.equal(index.length, 121);
+  assert.equal(index[0].id, id);
+  assert.ok(!index.some((report) => report.id === "legacy"));
 
-  assert.equal(result.total, 1);
-  assert.equal(result.rows[0].location_note, "front gate");
-  assert.equal(photo.photo_key, "reports/report-id/photo");
-  assert.match(queries[1], /LIMIT 100/);
-  assert.match(queries[1], /school_case_number, school_case_id/);
-  assert.doesNotMatch(queries[1], /applicant_name|applicant_phone|applicant_email|save_contact_info/i);
+  const { total, reports } = await listPublicReports(kv);
+  assert.equal(total, 121);
+  assert.equal(reports.length, 100);
 });
 
-test("accepts only public NTU detail redirects and reads the case number", async (t) => {
+test("returns an empty overview before any report is saved", async () => {
+  assert.deepEqual(await listPublicReports(fakeKv()), { total: 0, reports: [] });
+});
+
+test("accepts only public NTU detail redirects and parses case details", () => {
   assert.equal(caseIdFromRedirect("/repairservice2/PublicRepair/Details?caseId=171234"), "171234");
   assert.equal(caseIdFromRedirect("https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=171234"), "171234");
   assert.equal(caseIdFromRedirect("https://example.com/repairservice2/PublicRepair/Details?caseId=171234"), null);
@@ -180,15 +167,4 @@ test("accepts only public NTU detail redirects and reads the case number", async
       returnedReason: "請改由管理單位申請。",
     },
   );
-
-  t.mock.method(globalThis, "fetch", async (url) => {
-    if (String(url).includes("/PublicRepair/List?")) {
-      assert.match(String(url), /keyWord=MA11504000/);
-      return new Response(`<a href="/repairservice2/PublicRepair/Details?caseId=171234">MA11504000</a>`);
-    }
-    assert.equal(String(url), "https://my.ntu.edu.tw/repairservice2/PublicRepair/Details?caseId=171234");
-    return new Response(detail);
-  });
-  assert.equal(await findPublicCaseId("MA11504000"), "171234");
-  assert.equal(await fetchPublicCaseNumber("171234"), "MA11504000");
 });

@@ -11,8 +11,8 @@ test("builds the road report app shell", async () => {
   assert.doesNotMatch(html, /NTU Road Report/);
 });
 
-test("uses native Cloudflare Pages structure", async () => {
-  const [app, main, html, packageJson, css, favicon, viteConfig, envExample, viteEnv, ntu, flags, session, refresh, submit, tile] = await Promise.all([
+test("uses a Cloudflare Worker with static assets", async () => {
+  const [app, main, html, packageJson, css, favicon, viteConfig, envExample, devVarsExample, viteEnv, wranglerConfig, worker, env, ntu, flags, session, refresh, submit, tile] = await Promise.all([
     readFile(new URL("../src/RoadReportApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/main.tsx", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
@@ -21,13 +21,17 @@ test("uses native Cloudflare Pages structure", async () => {
     readFile(new URL("../public/favicon.png", import.meta.url)),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
+    readFile(new URL("../.dev.vars.example", import.meta.url), "utf8"),
     readFile(new URL("../src/vite-env.d.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/_lib/ntu.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/_lib/feature-flags.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/api/repair/session.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/api/repair/captcha/refresh.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/api/repair/submit.ts", import.meta.url), "utf8"),
-    readFile(new URL("../functions/api/map/tiles/[style]/[z]/[x]/[tile].ts", import.meta.url), "utf8"),
+    readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/lib/env.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/lib/ntu.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/lib/feature-flags.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/api/repair-session.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/api/repair-captcha-refresh.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/api/repair-submit.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/api/map-tiles.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(main, /createRoot/);
@@ -81,7 +85,9 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(packageJson, /"leaflet"/);
   assert.match(packageJson, /"@types\/leaflet"/);
   assert.match(packageJson, /"lucide-react"/);
-  assert.match(packageJson, /"dev:pages": "npm run build && wrangler pages dev dist --env-file=\.env --compatibility-date=2026-05-22 --compatibility-flags=nodejs_compat --kv=ROAD_REPORT_KV --r2=road-report-r2 --d1=road-report-db --persist-to=\.wrangler\/state"/);
+  assert.match(packageJson, /"dev:worker": "npm run build && wrangler dev --persist-to=\.wrangler\/state --test-scheduled"/);
+  assert.match(packageJson, /"deploy": "npm run build && wrangler deploy"/);
+  assert.doesNotMatch(packageJson, /dev:pages|wrangler pages/);
   assert.match(css, /@import "leaflet\/dist\/leaflet\.css"/);
   assert.match(css, /\.leaflet-report-marker/);
   assert.match(css, /\.leaflet-overview-marker/);
@@ -94,6 +100,21 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(html, /href="\/favicon.png"/);
   assert.match(html, /href="\/favicon.ico"/);
   await assert.rejects(access(new URL("../wrangler.toml", import.meta.url)));
+  await assert.rejects(access(new URL("../wrangler.local.jsonc", import.meta.url)));
+  await assert.rejects(access(new URL("../functions", import.meta.url)));
+  await assert.rejects(access(new URL("../migrations", import.meta.url)));
+  assert.match(wranglerConfig, /"main": "worker\/index\.ts"/);
+  assert.match(wranglerConfig, /"directory": "\.\/dist"/);
+  assert.match(wranglerConfig, /"not_found_handling": "single-page-application"/);
+  assert.match(wranglerConfig, /"run_worker_first": \["\/api\/\*", "\/__scheduled"\]/);
+  assert.match(wranglerConfig, /"kv_namespaces": \[\{ "binding": "REPORTS" \}\]/);
+  assert.match(wranglerConfig, /"bucket_name": "road-report-r2"/);
+  assert.match(wranglerConfig, /"crons": \["17 \* \* \* \*"\]/);
+  assert.doesNotMatch(wranglerConfig, /d1_databases|database_id|"id":/);
+  assert.match(worker, /async scheduled\(/);
+  assert.match(worker, /env\.ASSETS\.fetch\(request\)/);
+  assert.doesNotMatch(worker, /repair\/progress/);
+  assert.doesNotMatch(app, /\/api\/repair\/progress/);
   assert.match(viteConfig, /@vitejs\/plugin-react/);
   assert.doesNotMatch(viteConfig, /vinext|@cloudflare\/vite-plugin|sites\(/);
   assert.match(ntu, /fetchCreateSession/);
@@ -116,21 +137,21 @@ test("uses native Cloudflare Pages structure", async () => {
   assert.match(submit, /upstream\.set\("Location", `\$\{locationNote\}：\$\{coordinates\}`\)/);
   assert.doesNotMatch(submit, /ImageDescription/);
   assert.doesNotMatch(submit, /withCoordinates|textValue\(incoming, "Location"\)/);
-  assert.match(tile, /CARTO_API_KEY\?: string/);
+  assert.match(env, /CARTO_API_KEY\?: string/);
   assert.match(tile, /\/rastertiles\/\$\{style\}\/\$\{z\}\/\$\{x\}\/\$\{y\}\.png/);
   assert.match(tile, /searchParams\.set\("key", env\.CARTO_API_KEY\)/);
   assert.match(tile, /x-road-report-config/);
   assert.match(viteEnv, /VITE_DEBUG_OUTPUT\?: string/);
-  assert.equal(envExample.trim(), "CARTO_API_KEY=\nREPAIR_SUBMIT_ENABLED=false\nVITE_DEBUG_OUTPUT=false");
+  assert.equal(envExample.trim(), "VITE_DEBUG_OUTPUT=false");
+  assert.equal(devVarsExample.trim(), "CARTO_API_KEY=\nREPAIR_SUBMIT_ENABLED=false");
   await assert.rejects(access(new URL("../app/page.tsx", import.meta.url)));
-  await assert.rejects(access(new URL("../worker/index.ts", import.meta.url)));
   await assert.rejects(access(new URL("../scripts/prepare-pages-output.mjs", import.meta.url)));
   await assert.rejects(access(new URL("../public/file.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/globe.svg", import.meta.url)));
   await assert.rejects(access(new URL("../public/window.svg", import.meta.url)));
 });
 
-test("prepares Cloudflare Pages static output", async () => {
+test("builds static assets for the Worker", async () => {
   const assets = await readdir(new URL("../dist/assets/", import.meta.url));
 
   await access(new URL("../dist/index.html", import.meta.url));

@@ -1,4 +1,4 @@
-import { jsonResponse, methodNotAllowed } from "../../../_lib/http";
+import { jsonResponse } from "../lib/http";
 import {
   appendRepairSessionCookie,
   captchaUrl,
@@ -6,10 +6,10 @@ import {
   mergeCookieHeaders,
   ntuUrl,
   readRepairSession,
-} from "../../../_lib/ntu";
-import type { PagesContext } from "../../../_lib/types";
+} from "../lib/ntu";
+import type { RouteHandler } from "../lib/env";
 
-export async function onRequestPost({ request }: PagesContext) {
+export const refreshCaptcha: RouteHandler = async (request) => {
   const session = readRepairSession(request);
 
   if (!session) {
@@ -69,8 +69,4 @@ export async function onRequestPost({ request }: PagesContext) {
     },
     { headers },
   );
-}
-
-export function onRequestGet() {
-  return methodNotAllowed(["POST"]);
-}
+};

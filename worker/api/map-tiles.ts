@@ -1,16 +1,9 @@
-import { jsonResponse } from "../../../../../../_lib/http";
-import type { PagesContext } from "../../../../../../_lib/types";
-
-type Env = {
-  CARTO_API_KEY?: string;
-};
+import { jsonResponse } from "../lib/http";
+import type { RouteHandler } from "../lib/env";
 
 const CARTO_TILE_STYLES = new Set(["light_all"]);
 
-export async function onRequestGet({
-  env,
-  params,
-}: PagesContext<Env, { style: string; z: string; x: string; tile: string }>) {
+export const getMapTile: RouteHandler = async (request, env, params) => {
   const { style, z, x, tile } = params;
 
   if (!CARTO_TILE_STYLES.has(style) || !/^\d+$/.test(z) || !/^\d+$/.test(x) || !/^\d+\.png$/.test(tile)) {
@@ -80,7 +73,7 @@ export async function onRequestGet({
     statusText: upstream.statusText,
     headers,
   });
-}
+};
 
 function diagnosticHeaders({
   status,

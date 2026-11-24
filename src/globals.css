@@ -809,12 +809,6 @@ textarea:focus-visible,
   overflow-wrap: anywhere;
 }
 
-.case-progress-pending {
-  display: inline-block;
-  color: var(--muted);
-  font-size: 0.76rem;
-}
-
 .overview-inline-button {
   margin-left: 10px;
   border: 0;

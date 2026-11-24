@@ -1,14 +1,14 @@
-import { jsonResponse, methodNotAllowed } from "../../_lib/http";
-import { FORWARD_TO_NTU, isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
+import { jsonResponse } from "../lib/http";
+import { FORWARD_TO_NTU, isRepairSubmitEnabled } from "../lib/feature-flags";
 import {
   appendRepairSessionCookie,
   captchaUrl,
   fetchCaptchaImageDataUrl,
   fetchCreateSession,
-} from "../../_lib/ntu";
-import type { PagesContext } from "../../_lib/types";
+} from "../lib/ntu";
+import type { RouteHandler } from "../lib/env";
 
-export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv>) {
+export const createRepairSession: RouteHandler = async (request, env) => {
   try {
     const { session, items } = await fetchCreateSession();
     const captchaImageUrl = await fetchCaptchaImageDataUrl(session);
@@ -35,8 +35,4 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
       { status: 502 },
     );
   }
-}
-
-export function onRequestGet() {
-  return methodNotAllowed(["POST"]);
-}
+};

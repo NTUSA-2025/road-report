@@ -1,15 +1,15 @@
-import { jsonResponse, methodNotAllowed } from "../../_lib/http";
-import { FORWARD_TO_NTU, isRepairSubmitEnabled, type SubmissionFeatureEnv } from "../../_lib/feature-flags";
+import { jsonResponse } from "../lib/http";
+import { FORWARD_TO_NTU, isRepairSubmitEnabled } from "../lib/feature-flags";
 import {
   appendRepairSessionCookie,
   createPath,
   fetchCreateSession,
   mergeCookieHeaders,
   readRepairSession,
-} from "../../_lib/ntu";
-import { checkReportSchema, reportStorage, saveReport, type ReportStorageEnv } from "../../_lib/report-storage";
-import { caseIdFromRedirect, fetchPublicCaseNumber } from "../../_lib/ntu-case";
-import type { PagesContext } from "../../_lib/types";
+} from "../lib/ntu";
+import { reportStorage, saveReport, type ReportStorage, type SchoolCase } from "../lib/report-storage";
+import { caseIdFromRedirect, fetchPublicCase } from "../lib/ntu-case";
+import type { RouteHandler } from "../lib/env";
 
 const REQUIRED_FIELDS = [
   "ApplicantPhone",
@@ -21,7 +21,7 @@ const REQUIRED_FIELDS = [
   "CapAns",
 ];
 
-export async function onRequestPost({ request, env }: PagesContext<SubmissionFeatureEnv & ReportStorageEnv>) {
+export const submitRepair: RouteHandler = async (request, env) => {
   if (FORWARD_TO_NTU && !isRepairSubmitEnabled(env)) {
     return jsonResponse(
       { error: "報修送出目前暫停開放，驗證碼與表單仍可先準備。" },
@@ -50,10 +50,9 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
     );
   }
 
-  let storage: ReturnType<typeof reportStorage>;
+  let storage: ReportStorage;
   try {
     storage = reportStorage(env);
-    await checkReportSchema(storage.database);
   } catch (error) {
     console.error("Report storage is unavailable", error);
     return jsonResponse(
@@ -137,13 +136,8 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
   }
 
   const schoolCaseId = redirected ? caseIdFromRedirect(location) : null;
-  const schoolCaseNumber = schoolCaseId
-    ? await fetchPublicCaseNumber(schoolCaseId).catch((error) => {
-      console.error("Failed to read NTU case number", schoolCaseId, error);
-      return null;
-    })
-    : null;
-  const schoolCase = schoolCaseId ? { id: schoolCaseId, number: schoolCaseNumber } : null;
+  const schoolCase = schoolCaseId ? await readSchoolCase(schoolCaseId) : null;
+  const schoolCaseNumber = schoolCase?.number ?? null;
 
   try {
     const id = await saveReport(storage, incoming, image, schoolCase);
@@ -165,10 +159,22 @@ export async function onRequestPost({ request, env }: PagesContext<SubmissionFea
       ...(redirected ? { redirect: location } : {}),
     });
   }
-}
+};
 
-export function onRequestGet() {
-  return methodNotAllowed(["POST"]);
+// A failed read still keeps the case id; the scheduled sync fills in the rest.
+async function readSchoolCase(id: string): Promise<SchoolCase> {
+  try {
+    const { caseNumber, status, unacceptedReason, returnedReason } = await fetchPublicCase(id);
+    return {
+      id,
+      number: caseNumber,
+      progress: { status, unacceptedReason, returnedReason },
+      checkedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Failed to read NTU case details", id, error);
+    return { id, number: null, progress: null, checkedAt: null };
+  }
 }
 
 function textValue(formData: FormData, key: string) {

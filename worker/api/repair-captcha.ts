@@ -1,8 +1,8 @@
-import { jsonResponse } from "../../_lib/http";
-import { ntuUrl, readRepairSession } from "../../_lib/ntu";
-import type { PagesContext } from "../../_lib/types";
+import { jsonResponse } from "../lib/http";
+import { ntuUrl, readRepairSession } from "../lib/ntu";
+import type { RouteHandler } from "../lib/env";
 
-export async function onRequestGet({ request }: PagesContext) {
+export const getCaptchaImage: RouteHandler = async (request) => {
   const session = readRepairSession(request);
 
   if (!session) {
@@ -38,4 +38,4 @@ export async function onRequestGet({ request }: PagesContext) {
       "content-type": response.headers.get("content-type") ?? "image/png",
     },
   });
-}
+};

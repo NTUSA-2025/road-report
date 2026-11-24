@@ -47,7 +47,7 @@ type SchoolProgress = {
   status: string;
   unacceptedReason: string;
   returnedReason: string;
-} | "error";
+};
 
 type ReportSummary = {
   id: string;
@@ -57,6 +57,7 @@ type ReportSummary = {
   itemId: string;
   schoolCaseId: string | null;
   schoolCaseNumber: string | null;
+  schoolProgress: SchoolProgress | null;
   photoUrl: string;
   coordinates: Coordinates;
   reportedAt: string;
@@ -114,7 +115,6 @@ export function RoadReportApp() {
     reports: [], total: 0, loading: false, error: "",
   });
   const [overviewReload, setOverviewReload] = useState(0);
-  const [schoolProgress, setSchoolProgress] = useState<Record<string, SchoolProgress>>({});
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState<Coordinates>(DEFAULT_COORDS);
   const [items, setItems] = useState<RepairItem[]>(FALLBACK_ITEMS);
@@ -257,7 +257,6 @@ export function RoadReportApp() {
 
     const controller = new AbortController();
     setOverview({ reports: [], total: 0, loading: true, error: "" });
-    setSchoolProgress({});
 
     async function loadReports() {
       try {
@@ -274,42 +273,6 @@ export function RoadReportApp() {
         if (!controller.signal.aborted) {
           setOverview({ reports: payload.reports, total: payload.total, loading: false, error: "" });
 
-          const caseIds = [...new Set((payload.reports as ReportSummary[])
-            .map((report) => report.schoolCaseId)
-            .filter((id): id is string => Boolean(id)))];
-          let next = 0;
-          async function loadProgress() {
-            while (next < caseIds.length && !controller.signal.aborted) {
-              const caseId = caseIds[next++];
-              try {
-                const response = await fetch(`/api/repair/progress?${new URLSearchParams({ caseId })}`, {
-                  cache: "no-store",
-                  signal: controller.signal,
-                });
-                const result = await response.json() as {
-                  report?: { status?: string; unacceptedReason?: string; returnedReason?: string };
-                };
-                const report = result.report;
-                const status = report?.status;
-                if (!response.ok || !status) throw new Error("無法取得校方進度");
-                if (!controller.signal.aborted) {
-                  setSchoolProgress((current) => ({
-                    ...current,
-                    [caseId]: {
-                      status,
-                      unacceptedReason: report?.unacceptedReason ?? "",
-                      returnedReason: report?.returnedReason ?? "",
-                    },
-                  }));
-                }
-              } catch {
-                if (!controller.signal.aborted) {
-                  setSchoolProgress((current) => ({ ...current, [caseId]: "error" }));
-                }
-              }
-            }
-          }
-          void Promise.all(Array.from({ length: Math.min(4, caseIds.length) }, loadProgress));
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -616,7 +579,6 @@ export function RoadReportApp() {
           <ReportOverview
             {...overview}
             items={items}
-            schoolProgress={schoolProgress}
             onRetry={() => setOverviewReload((current) => current + 1)}
           />
         ) : (
@@ -916,9 +878,8 @@ function ReportOverview({
   loading,
   error,
   items,
-  schoolProgress,
   onRetry,
-}: OverviewState & { items: RepairItem[]; schoolProgress: Record<string, SchoolProgress>; onRetry: () => void }) {
+}: OverviewState & { items: RepairItem[]; onRetry: () => void }) {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
   const selectedReport = reports.find((report) => report.id === selectedId) ?? reports[0];
@@ -943,12 +904,12 @@ function ReportOverview({
             selectedId={selectedReport.id}
             onSelect={setSelectedId}
           />
-          <OverviewReportCard className="overview-report-panel" report={selectedReport} items={items} schoolProgress={schoolProgress} />
+          <OverviewReportCard className="overview-report-panel" report={selectedReport} items={items} />
         </div>
       ) : (
         <section className="overview-list" aria-label="回報列表">
           {reports.map((report) => (
-            <OverviewReportCard className="overview-list-card" key={report.id} report={report} items={items} schoolProgress={schoolProgress} />
+            <OverviewReportCard className="overview-list-card" key={report.id} report={report} items={items} />
           ))}
         </section>
       )}
@@ -980,21 +941,19 @@ function ReportOverview({
 function OverviewReportCard({
   report,
   items,
-  schoolProgress,
   className,
 }: {
   report: ReportSummary;
   items: RepairItem[];
-  schoolProgress: Record<string, SchoolProgress>;
   className: string;
 }) {
   const itemLabel = items.find((item) => item.value === report.itemId)?.label;
   const schoolCaseId = report.schoolCaseId;
-  const progress = schoolCaseId ? schoolProgress[schoolCaseId] : null;
-  const progressNote = progress && progress !== "error"
+  const progress = report.schoolProgress;
+  const progressNote = progress
     ? [progress.unacceptedReason, progress.returnedReason].filter(Boolean).join("；")
     : "";
-  const stages = progress && progress !== "error" ? caseStages(progress.status) : [];
+  const stages = progress ? caseStages(progress.status) : [];
 
   return (
     <article className={`overview-report-card ${className}`}>
@@ -1009,12 +968,8 @@ function OverviewReportCard({
         <p>{report.description}</p>
       </div>
       {schoolCaseId ? (
-        <div className={`case-progress-footer${progress && progress !== "error" && progress.status === "已不受理" ? " is-rejected" : ""}`}>
-          {progress === "error" ? (
-            <a aria-label={`校方狀態暫時無法取得，開啟臺大案件 ${report.schoolCaseNumber ?? schoolCaseId}`} className="case-link" href={schoolCaseUrl(schoolCaseId)} rel="noopener noreferrer" target="_blank">
-              校方狀態暫時無法取得，前往臺大查看
-            </a>
-          ) : progress ? (
+        <div className={`case-progress-footer${progress?.status === "已不受理" ? " is-rejected" : ""}`}>
+          {progress ? (
             <>
               <ol aria-label="臺大案件處理階段" className="case-stage-list" role="list">
                 {stages.map((stage) => (
@@ -1028,7 +983,9 @@ function OverviewReportCard({
               {progressNote ? <div className="case-stage-note">{progressNote}</div> : null}
             </>
           ) : (
-            <span className="case-progress-pending">查詢校方狀態中…</span>
+            <a aria-label={`開啟臺大案件 ${report.schoolCaseNumber ?? schoolCaseId}`} className="case-link" href={schoolCaseUrl(schoolCaseId)} rel="noopener noreferrer" target="_blank">
+              前往臺大查看進度
+            </a>
           )}
         </div>
       ) : null}
