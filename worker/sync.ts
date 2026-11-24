@@ -1,11 +1,9 @@
 import { fetchPublicCase } from "./lib/ntu-case";
 import {
-  listReportIds,
   readIndex,
   readReport,
   writeIndex,
   writeReport,
-  toSummary,
   type ReportKV,
   type ReportSummary,
   type SchoolProgress,
@@ -21,18 +19,6 @@ type FetchCase = (caseId: string) => Promise<{ caseNumber: string } & SchoolProg
 
 export async function syncReports(kv: ReportKV, now = new Date(), fetchCase: FetchCase = fetchPublicCase) {
   const reports = await readIndex(kv);
-  let added = 0;
-
-  const indexed = new Set(reports.map((report) => report.id));
-  const missing = (await listReportIds(kv)).filter((id) => !indexed.has(id));
-  for (const id of missing) {
-    const record = await readReport(kv, id);
-    if (record) {
-      reports.push(toSummary(record));
-      added++;
-    }
-  }
-
   const due = casesToCheck(reports, now);
   const updates = new Map<string, ReportSummary>();
   let next = 0;
@@ -44,11 +30,11 @@ export async function syncReports(kv: ReportKV, now = new Date(), fetchCase: Fet
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, due.length) }, worker));
 
-  if (added > 0 || updates.size > 0) {
+  if (updates.size > 0) {
     await writeIndex(kv, reports.map((report) => updates.get(report.id) ?? report));
   }
 
-  return { added, checked: due.length };
+  return { checked: due.length };
 }
 
 export function casesToCheck(reports: ReportSummary[], now: Date) {

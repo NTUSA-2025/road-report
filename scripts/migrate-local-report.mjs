@@ -57,7 +57,8 @@ Old-format keys (report:{id} with only id/createdAt/status) can be listed and re
 npx wrangler kv key list --binding REPORTS --remote
 npx wrangler kv key delete "report:<old id>" --binding REPORTS --remote
 
-The next hourly cron adds the uploaded reports to reports:index and fills in their NTU status.`);
+Uploaded records are not added to reports:index automatically; add their summaries to the index
+before they show up in the overview. The hourly cron then fills in their NTU status.`);
 
 async function findSqlite(dir, table) {
   for (const name of await readdir(dir)) {

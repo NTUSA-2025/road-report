@@ -6,11 +6,6 @@ const PUBLIC_REPORT_LIMIT = 100;
 export type ReportKV = {
   get(key: string): Promise<string | null>;
   put(key: string, value: string): Promise<void>;
-  list(options: { prefix: string; cursor?: string }): Promise<{
-    keys: { name: string }[];
-    list_complete: boolean;
-    cursor?: string;
-  }>;
 };
 
 export type ReportBucket = {
@@ -103,17 +98,6 @@ export function writeReport(kv: ReportKV, record: ReportRecord) {
   return kv.put(`${REPORT_PREFIX}${record.id}`, JSON.stringify(record));
 }
 
-export async function listReportIds(kv: ReportKV) {
-  const ids: string[] = [];
-  let cursor: string | undefined;
-  do {
-    const page = await kv.list({ prefix: REPORT_PREFIX, cursor });
-    ids.push(...page.keys.map((key) => key.name.slice(REPORT_PREFIX.length)));
-    cursor = page.list_complete ? undefined : page.cursor;
-  } while (cursor);
-  return ids;
-}
-
 export function toSummary(record: ReportRecord): ReportSummary {
   return {
     id: record.id,
@@ -182,7 +166,7 @@ export async function saveReport(
     throw error;
   }
 
-  // The scheduled sync re-adds any report missing from the index, so a lost write here is recoverable.
+  // The record is already saved; failing the request now would only invite a duplicate resubmission.
   try {
     await writeIndex(storage.kv, [toSummary(record), ...await readIndex(storage.kv)]);
   } catch (error) {

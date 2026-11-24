@@ -53,7 +53,7 @@ test("checks open cases, skips closed or recently checked ones, and records chan
   });
 
   assert.deepEqual(fetched.sort(), ["1", "2"]);
-  assert.deepEqual(result, { added: 0, checked: 2 });
+  assert.deepEqual(result, { checked: 2 });
 
   const index = Object.fromEntries(kv.json("reports:index").reports.map((report) => [report.id, report]));
   assert.deepEqual(index.new.schoolProgress, progress("處理中"));
@@ -100,22 +100,6 @@ test("keeps the last known status when the NTU page cannot be read", async () =>
   const [report] = kv.json("reports:index").reports;
   assert.deepEqual(report.schoolProgress, progress("處理中"));
   assert.equal(report.schoolCheckedAt, NOW.toISOString());
-});
-
-test("re-adds saved reports missing from the index and ignores legacy keys", async () => {
-  const kept = summary("kept", { createdAt: "2026-11-02T00:00:00.000Z" });
-  const lost = summary("lost", { createdAt: "2026-11-03T00:00:00.000Z" });
-  const kv = fakeKv({
-    "reports:index": { reports: [kept] },
-    "report:kept": record(kept),
-    "report:lost": record(lost),
-    "report:legacy": { id: "legacy", createdAt: "2026-10-05T09:02:57.900Z", status: "submitted" },
-  });
-
-  const result = await syncReports(kv, NOW, async () => assert.fail("no case should be fetched"));
-
-  assert.deepEqual(result, { added: 1, checked: 0 });
-  assert.deepEqual(kv.json("reports:index").reports.map((report) => report.id), ["lost", "kept"]);
 });
 
 test("does not write the index when nothing changed", async () => {
