@@ -604,28 +604,11 @@ textarea:focus-visible,
 }
 
 .overview-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: white;
-  padding: 18px 0;
-}
-
-.overview-summary div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   min-width: 0;
-  padding: 0 14px;
-}
-
-.overview-summary div + div {
-  border-left: 1px solid var(--line);
-}
-
-.overview-summary span,
-.overview-summary strong {
-  display: block;
-  overflow-wrap: anywhere;
+  padding: 0 4px;
 }
 
 .overview-message {
@@ -648,16 +631,30 @@ textarea:focus-visible,
 
 .overview-summary span {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .overview-summary strong {
-  margin-top: 7px;
   color: var(--brand-dark);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 750;
-  line-height: 1.2;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
+}
+
+.overview-summary small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.overview-summary p {
+  margin: 0 0 0 auto;
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
 }
 
 .overview-map-shell,

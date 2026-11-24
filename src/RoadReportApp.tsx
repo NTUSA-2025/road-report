@@ -926,18 +926,9 @@ function ReportOverview({
   return (
     <section className="overview-page" aria-label="回報狀況總覽">
       <div className="overview-summary" aria-label="回報摘要">
-        <div>
-          <span>總件數</span>
-          <strong>{total}</strong>
-        </div>
-        <div>
-          <span>顯示件數</span>
-          <strong>{reports.length}</strong>
-        </div>
-        <div>
-          <span>回報類型</span>
-          <strong>{new Set(reports.map((report) => report.itemId)).size}</strong>
-        </div>
+        <span>累計回報</span>
+        <strong>{total}<small>件</small></strong>
+        {reports.length < total ? <p>顯示最新 {reports.length} 件</p> : null}
       </div>
 
       {loading || error || !selectedReport ? (
