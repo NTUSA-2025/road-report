@@ -107,10 +107,10 @@ test("uses a Cloudflare Worker with static assets", async () => {
   assert.match(wranglerConfig, /^directory = "\.\/dist"$/m);
   assert.match(wranglerConfig, /^not_found_handling = "single-page-application"$/m);
   assert.match(wranglerConfig, /^run_worker_first = \["\/api\/\*", "\/__scheduled"\]$/m);
-  assert.match(wranglerConfig, /^\[\[kv_namespaces\]\]\nbinding = "REPORTS"\n\n/m);
+  assert.match(wranglerConfig, /^\[\[kv_namespaces\]\]\nbinding = "REPORTS"\nid = "c6fd16918097479dbaf138b181cf359e"$/m);
   assert.match(wranglerConfig, /^bucket_name = "road-report-r2"$/m);
   assert.match(wranglerConfig, /^crons = \["17 \* \* \* \*"\]$/m);
-  assert.doesNotMatch(wranglerConfig, /d1_databases|database_id|^id = /m);
+  assert.doesNotMatch(wranglerConfig, /d1_databases|database_id/);
   assert.match(worker, /async scheduled\(/);
   assert.match(worker, /env\.ASSETS\.fetch\(request\)/);
   assert.doesNotMatch(worker, /repair\/progress/);

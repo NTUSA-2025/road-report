@@ -103,14 +103,13 @@ KV 內有兩種 key：
 
 ## 部署
 
-本站不將 Cloudflare 資源 ID 寫入公開 repo：`wrangler.toml` 的 R2 以 bucket 名稱指定；KV 不寫 id，第一次 `wrangler deploy` 時在互動提示中選擇既有的 `ROAD_REPORT_KV`，之後的部署會沿用已部署 Worker 上的同名 binding。
+一般部署由 Cloudflare Workers Builds 連接 GitHub 自動進行：Build command 為 `npm run build`，Deploy command 為 `npx wrangler deploy`。所有 binding 都寫在 `wrangler.toml`：KV 以 namespace id 綁定 `ROAD_REPORT_KV`，R2 以 bucket 名稱綁定 `road-report-r2`；`REPAIR_SUBMIT_ENABLED` 寫在 `vars`。`CARTO_API_KEY` 是 secret，只放在 Cloudflare 與本機未追蹤的 `.dev.vars`：
 
 ```bash
-npm run deploy                          # build 後 wrangler deploy
-npx wrangler secret put CARTO_API_KEY   # 第一次部署後設定
+npx wrangler secret put CARTO_API_KEY
 ```
 
-`REPAIR_SUBMIT_ENABLED` 寫在 `wrangler.toml` 的 `vars`。也可在 Dashboard 以 Workers Builds 連接 GitHub，Build command 設為 `npm run build`、Deploy command 設為 `npx wrangler deploy`（第一次互動部署後再接上，KV binding 才能沿用）。
+需要從本機手動部署時使用 `npm run deploy`（build 後 `wrangler deploy`）。
 
 從舊版（Pages + D1）搬資料時，[`scripts/migrate-local-report.mjs`](scripts/migrate-local-report.mjs) 會把本機 `.wrangler/state` 裡舊 D1 的回報轉成 KV 格式、匯出照片，並印出上傳用的 `wrangler --remote` 指令；腳本本身不連線到 Cloudflare。
 

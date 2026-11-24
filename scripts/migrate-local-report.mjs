@@ -41,7 +41,7 @@ for (const row of reports) {
 
   commands.push(
     `npx wrangler r2 object put "road-report-r2/${row.photo_key}" --file "${photoFile}" --content-type "${row.photo_content_type}" --remote`,
-    `npx wrangler kv key put "report:${row.id}" --path "${recordFile}" --namespace-id <ROAD_REPORT_KV_ID> --remote`,
+    `npx wrangler kv key put "report:${row.id}" --path "${recordFile}" --binding REPORTS --remote`,
   );
   console.log(`Prepared ${row.id} (${row.location_note}${row.school_case_number ? `, ${row.school_case_number}` : ""})`);
 }
@@ -49,14 +49,13 @@ for (const row of reports) {
 console.log(`
 Files written to ${outDir}
 
-Find the ROAD_REPORT_KV id with: npx wrangler kv namespace list
 Then run:
 
 ${commands.join("\n")}
 
 Old-format keys (report:{id} with only id/createdAt/status) can be listed and removed with:
-npx wrangler kv key list --namespace-id <ROAD_REPORT_KV_ID> --remote
-npx wrangler kv key delete "report:<old id>" --namespace-id <ROAD_REPORT_KV_ID> --remote
+npx wrangler kv key list --binding REPORTS --remote
+npx wrangler kv key delete "report:<old id>" --binding REPORTS --remote
 
 The next hourly cron adds the uploaded reports to reports:index and fills in their NTU status.`);
 

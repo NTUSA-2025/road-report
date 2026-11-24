@@ -11,10 +11,10 @@ not_found_handling = "single-page-application"
 # /__scheduled lets `wrangler dev --test-scheduled` reach the Worker; in production it falls through to the SPA.
 run_worker_first = ["/api/*", "/__scheduled"]
 
-# No resource IDs in the repo: on the first deploy, pick the existing ROAD_REPORT_KV namespace;
-# later deploys inherit the binding from the deployed Worker.
+# ROAD_REPORT_KV
 [[kv_namespaces]]
 binding = "REPORTS"
+id = "c6fd16918097479dbaf138b181cf359e"
 
 [[r2_buckets]]
 binding = "PHOTOS"
